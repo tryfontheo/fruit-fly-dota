@@ -1,0 +1,14 @@
+{
+  "neurons": 176422,
+  "anatomical_pairs": 25862574,
+  "effective_pairs": 24614339,
+  "state_dtype": "float32",
+  "substeps": 4,
+  "sparse_matrix_mb": 197.620404,
+  "mean_decision_ms": 41.920443478236685,
+  "p95_decision_ms": 44.340669999883175,
+  "downstream_feature_norm": 0.10724365190196333,
+  "downstream_feature_variation": 0.002320295191413046,
+  "status": "Full selected MaleCNS sparse rate inference only; no Dota skill measured",
+  "zero_graph_downstream_norm": 0.0
+}

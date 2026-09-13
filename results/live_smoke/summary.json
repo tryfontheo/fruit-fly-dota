@@ -1,0 +1,36 @@
+{
+  "status": "Verified real-map observation \u2192 full connectome \u2192 movement order round trip; untrained",
+  "date": "2026-09-13",
+  "dota_build": 25265195,
+  "neurons": 176422,
+  "observations": 289,
+  "issued_orders": 243,
+  "observed_order_actions": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "first_position": [
+    -6500.0,
+    -6000.0
+  ],
+  "last_position": [
+    -3426.1811523438,
+    -5849.083984375
+  ],
+  "displacement": 3077.5213974850953,
+  "mean_decision_ms": 48.91122352941628,
+  "p95_decision_ms": 53.50426000013612,
+  "stop_recorded": true,
+  "limitations": [
+    "No attack/spell impact verified",
+    "No learning or full-match performance measured",
+    "Plain addon hero; no other hero bots",
+    "Movement partly determined by engineered exploration and legal mask"
+  ]
+}

@@ -1,6 +1,13 @@
-# Controlled Dota integration: staged, not engine-tested
+# Dota integration
 
-Selected route: an isolated **Workshop Tools custom addon**, with the frozen
+**Current full-model route:** [Live setup and limitations](LIVE_SETUP.md).
+Workshop Tools is installed locally. The `live/` addon runs the standard map
+and connects to the Python full MaleCNS model. See that document for current
+engine-test status. The content below is the historical 256-neuron export route.
+
+## Historical small-model scaffold
+
+Original route: an isolated **Workshop Tools custom addon**, with the frozen
 connectome reservoir and action readout exported to Lua and executed inside
 VScript. No desktop controls, memory reading, injection, external HTTP controller,
 Steam credentials, matchmaking or public/ranked queues are implemented.

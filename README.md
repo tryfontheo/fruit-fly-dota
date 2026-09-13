@@ -1,9 +1,29 @@
 # fruit-fly-dota
 
-A working, local **connectome-derived learning prototype** for movement and
-last-hitting in a small **toy lane simulator**. It does not yet play the Dota 2
-client. It is not a full-brain simulation, a living fly, or a demonstrated model
-of biological Dota learning.
+A local **connectome-derived agent research project**, targeting full real Dota
+matches in isolated Workshop Tools games. We have a trained small toy-lane
+baseline, a running **176,422-neuron MaleCNS sparse model**, and a real-map
+integration with a verified live movement round trip. Full-match competence is not established.
+This is connectivity-based rate simulation, not validated full-brain physiology.
+
+## Full model and real Dota
+
+The main model uses the entire curated MaleCNS v1.0 Neuron selection: 176,422
+nodes and 25,862,574 directed anatomical pairs. The approximately 166k headline
+does not exactly match this explicit selection. See [full model](docs/FULL_MODEL.md)
+for provenance, counts, omitted biology and the CPU benchmark.
+
+[Real Dota setup](dota/README.md) uses the standard Dota map inside an isolated
+addon. Visible telemetry passes to the full sparse network on localhost; a
+readout requests compass movement, attacks or Lina spells. The live policy is
+**untrained**. The old toy checkpoint is not presented as a real-game policy.
+No public/ranked matchmaking is implemented. Items, leveling decisions, teammates,
+objectives, real-game imitation and full-match RL remain upcoming milestones.
+
+On September 13 the full graph received real observations and issued movement
+orders in Dota build 25265195; positions changed and `fly_stop` stopped new orders.
+See [engine smoke-test evidence](results/live_smoke/summary.json). Attack/spell
+impacts and learned real-game behavior are **not yet verified**.
 
 ## What works
 
@@ -22,7 +42,8 @@ of biological Dota learning.
   memory ablations. No LSTM, transformer, or hidden tactical planner.
 - Held-out evaluation, independent learning seeds, disconnected/shuffled wiring
   controls, model checkpoints, a disclosed Fly Purity rubric and a Lua exporter.
-- Replay interchange validation and a tools-only Dota adapter scaffold.
+- Replay interchange validation, a small-model Lua exporter, and a full-model
+  local HTTP adapter for Workshop Tools.
 
 ## Initial results (September 13, 2026)
 

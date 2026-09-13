@@ -1,0 +1,76 @@
+{
+  "dataset": "MaleCNS v1.0",
+  "created_utc": "2026-09-13T18:16:38.885582+00:00",
+  "selection": "All entries labeled Neuron by neuPrint male-cns:v1.0; induced graph on those IDs",
+  "selection_query": "MATCH (n:Neuron) RETURN n.bodyId AS bodyId ORDER BY bodyId",
+  "selection_endpoint": "https://neuprint.janelia.org/api/custom/custom",
+  "source_page": "https://male-cns.janelia.org/download/",
+  "selected_neurons": 176422,
+  "directed_pairs": 25862574,
+  "synapse_count": 125024864,
+  "effective_fast_pairs": 24614339,
+  "minimum_pair_synapses": 1,
+  "upstream_synapse_confidence": 0.5,
+  "source_connection_rows": 151856684,
+  "sensory_neurons": 17336,
+  "readout_neurons": 2129,
+  "zero_fast_sign_neurons": 20602,
+  "superclasses": {
+    "ol_intrinsic": 89403,
+    "cb_intrinsic": 32164,
+    "vnc_intrinsic": 13161,
+    "unannotated": 9722,
+    "visual_projection": 9201,
+    "vnc_sensory": 6370,
+    "ol_sensory": 6098,
+    "cb_sensory": 4868,
+    "ascending_neuron": 1846,
+    "descending_neuron": 1314,
+    "vnc_motor": 708,
+    "visual_centrifugal": 563,
+    "sensory_ascending": 537,
+    "cb_motor": 107,
+    "vnc_efferent": 94,
+    "cb_endocrine": 72,
+    "ENS": 50,
+    "vnc_tbc": 38,
+    "vnc_sensory_tbc": 36,
+    "vnc_endocrine": 22,
+    "cb_sensory_tbc": 14,
+    "sensory_descending": 12,
+    "efferent_ascending": 8,
+    "efferent_descending": 4,
+    "cb_efferent": 4,
+    "visual_projection_tbc": 2,
+    "sensory_ascending_tbc": 2,
+    "descending_neuron_tbc": 2
+  },
+  "sign_assumption": "ACh +1; GABA/glutamate -1; other/unknown 0. No receptor model or modulation.",
+  "source_files": {
+    "annotations.feather": {
+      "url": "https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data/flat-connectome/body-annotations-male-cns-v1.0-minconf-0.5.feather",
+      "sha256": "2177e246113e4cfbf1e7772ec37c6da1955ff22e8063d0b1f833101f99a9a3b2"
+    },
+    "neurotransmitters.feather": {
+      "url": "https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data/flat-connectome/body-neurotransmitters-male-cns-v1.0.feather",
+      "sha256": "95c9289220663abeb3409f3ad9e5a7f8a53f8093f5139d15502cd08da8879621"
+    },
+    "connections.feather": {
+      "url": "https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data/flat-connectome/connectome-weights-male-cns-v1.0-minconf-0.5.feather",
+      "sha256": "e35da783d1c686b2b58b3b87cd6a403ae43bfcfba8bff28e08ef752c1a56afc1"
+    }
+  },
+  "selection_sha256": "34b00b6ac57eca6af05a453f3ececa0f1bada2f5774e9db22da53c504d77cb08",
+  "weights_sha256": "d26211dea212148d1383b57f5b80155545be93089e407b97078df1964a9741e2",
+  "anatomy_sha256": "f2c847ddfc1a57886923fad55698617e91afcf7a01fd2f2075edd7265f2955d9",
+  "ids_sha256": "0be708c85482f0d2d42235c37235cf2f758b2314ebe16962ca807174ce507c96",
+  "populations_sha256": "8170cb3f0e2ddce7ed8c51b73e2c5fb28b2e2149ce251e0ad787b0c9cb114270",
+  "license": "CC BY 4.0",
+  "attribution": "FlyEM (HHMI Janelia), University of Cambridge, MRC LMB, Google Research; Berg et al., Cell 2026",
+  "limitations": [
+    "Full selected neuronal graph, not all segmentation fragments",
+    "Not a validated full physiological brain simulation",
+    "Population encoding and rate dynamics engineered",
+    "Neuromodulation and unknown fast signs not simulated"
+  ]
+}
