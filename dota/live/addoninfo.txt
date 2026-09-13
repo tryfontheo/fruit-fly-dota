@@ -2,5 +2,5 @@
 {
     "maps" "dota"
     "IsPlayable" "1"
-    "dota" { "MaxPlayers" "1" }
+    "dota" { "MaxPlayers" "10" }
 }

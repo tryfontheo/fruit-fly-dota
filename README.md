@@ -15,10 +15,17 @@ for provenance, counts, omitted biology and the CPU benchmark.
 
 [Real Dota setup](dota/README.md) uses the standard Dota map inside an isolated
 addon. Visible telemetry passes to the full sparse network on localhost; a
-readout requests compass movement, attacks or Lina spells. The live policy is
-**untrained**. The old toy checkpoint is not presented as a real-game policy.
-No public/ranked matchmaking is implemented. Items, leveling decisions, teammates,
-objectives, real-game imitation and full-match RL remain upcoming milestones.
+readout requests compass movement, attacks or Shadow Fiend spells. An initial
+readout is now trained on five professional SF replays, with three training
+matches and separate validation/test matches. See [SF experiment](docs/SHADOW_FIEND.md).
+The initial live test got stuck repeatedly choosing a direction; it is not a
+competent full-match policy. No public/ranked matchmaking is implemented.
+Shopping, learned leveling, objectives and full-match RL remain incomplete.
+
+Start the trained controller with
+`python -m fruit_fly_dota.live --policy results/sf_replay/policy.npz`.
+Watch actual sampled neural activity and symbolic actions at
+<http://127.0.0.1:8765/>. Use `fly_camera_follow` in the local addon to follow SF.
 
 On September 13 the full graph received real observations and issued movement
 orders in Dota build 25265195; positions changed and `fly_stop` stopped new orders.
@@ -114,16 +121,16 @@ The supplied clips' code and Masters claim could not be authenticated.
 
 [Dota integration](dota/README.md) documents the chosen Workshop Tools route,
 what was inspected locally, adapter limitations and an engine-test checklist.
-No public/ranked automation is included. No installed Dota files were modified.
+No public/ranked automation is included. Only this project's isolated addon
+directories are installed; stock game scripts and saved key bindings are untouched.
 
-Next: enable Workshop Tools, build the isolated single-creep fixture, measure
-actual attack timing, validate Lua/Python parity on recorded telemetry, and train
-against that environment. Keep the toy simulator as a regression harness.
-Then add fog/delayed-cue tasks to test memory and anatomically annotated sensory
-and descending populations to replace arbitrary population wiring.
+Next: verify full local match lifecycle, reconstruct replay inventory and skill
+levels, add learned shopping/leveling heads, and improve closed-loop navigation.
+Keep the toy simulator as a regression harness and test memory with delayed cues.
 
-Replay imitation begins with [the data contract](docs/REPLAYS.md). No `.dem` or
-YouTube recording was supplied or processed. Never equate spectator state with
+Replay imitation uses downloaded Valve `.dem` files via Clarity; see the
+[SF data notes](docs/SHADOW_FIEND.md) and [data contract](docs/REPLAYS.md).
+No YouTube recording has been processed. Never equate spectator state with
 player-visible information, or state changes with recorded player orders.
 
 ## Files

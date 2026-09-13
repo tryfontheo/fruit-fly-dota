@@ -2,17 +2,17 @@ import numpy as np
 import pytest
 from scipy.sparse import csr_matrix
 from fruit_fly_dota.full_neural import FullReservoir
-from fruit_fly_dota.live import Controller, validate
+from fruit_fly_dota.live import Controller, validate, OBS_SIZE, ACTION_COUNT
 
 def payload(seq=0):
-    return dict(seq=seq, obs=[.1]*16, legal=[1]*13)
+    return dict(seq=seq, obs=[.1]*OBS_SIZE, legal=[1]*ACTION_COUNT)
 
 def test_signal_must_cross_anatomical_edges():
     w=csr_matrix(([1.,1.],([1,2],[0,1])),shape=(3,3))
-    brain=FullReservoir(w,[0],[2],input_size=16,pools=1)
-    assert abs(brain.features(np.ones(16))[0])>0
-    disconnected=FullReservoir(w*0,[0],[2],input_size=16,pools=1)
-    assert disconnected.features(np.ones(16))[0]==0
+    brain=FullReservoir(w,[0],[2],input_size=OBS_SIZE,pools=1)
+    assert abs(brain.features(np.ones(OBS_SIZE))[0])>0
+    disconnected=FullReservoir(w*0,[0],[2],input_size=OBS_SIZE,pools=1)
+    assert disconnected.features(np.ones(OBS_SIZE))[0]==0
     brain.reset()
     assert not brain.state.any()
 
@@ -22,9 +22,9 @@ def test_invalid_protocol(field,value):
     with pytest.raises(ValueError): validate(p)
 
 def test_legal_mask_and_sequence():
-    brain=FullReservoir(csr_matrix(([1.],([1],[0])),shape=(2,2)),[0],[1],input_size=16,pools=1)
+    brain=FullReservoir(csr_matrix(([1.],([1],[0])),shape=(2,2)),[0],[1],input_size=OBS_SIZE,pools=1)
     c=Controller(brain)
-    p=payload(1); p['legal']=[1]+[0]*12
+    p=payload(1); p['legal']=[1]+[0]*(ACTION_COUNT-1)
     assert c.step(p)['action']==0
     with pytest.raises(ValueError): c.step(p)
 

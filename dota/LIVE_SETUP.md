@@ -1,80 +1,67 @@
 # Full model: real-map integration
 
-This path uses Valve's standard `dota` map, with an isolated addon called
-`fruit_fly_dota`. It does not replace built-in addons or use matchmaking.
-Install Dota 2 Workshop Tools from Steam first.
+This isolated Workshop Tools addon uses Valve's standard `dota` map. It does not
+replace stock scripts or use matchmaking. Install Workshop Tools through Steam.
 
-**Engine status, September 13:** live observations, full-model inference, movement
-orders and position changes verified in build 25265195. Stop command verified.
-No attack/spell impact or real-game learning result yet. Two initial late-spawn
-attempts crashed while cosmetic resources were unloaded; player-aware asynchronous
-precaching resolved the tested spawn failure. The controller is stopped after tests.
+## Run
 
-From the repository root, after building the full model:
+Build the dataset following [full model setup](../docs/FULL_MODEL.md), then run:
 
 ```powershell
-.\.venv\Scripts\python.exe -m fruit_fly_dota.live
+python -m fruit_fly_dota.live --policy results/sf_replay/policy.npz
 ```
 
-In another terminal:
-
-```powershell
-.\scripts\install_dota.ps1
-```
-
-Alternatively `scripts/launch_dota.ps1` installs and launches the local map when
-Dota is closed. It does not change your saved Steam launch options.
-
-Launch Workshop Tools for `fruit_fly_dota`, open its Valve console, and run:
+In another terminal run `scripts/install_dota.ps1`. With Dota closed,
+`scripts/launch_dota.ps1` also installs and launches the map without changing
+saved Steam launch options. In the Workshop console:
 
 ```text
 dota_launch_custom_game fruit_fly_dota dota
 fly_start
+fly_match
 ```
 
-`fly_stop` disables new requests, invalidates pending replies and stops the unit.
-The controller binds only 127.0.0.1:8765 and accepts a bounded 16-number observation
-plus a 13-entry legal mask. Run only on a trusted local workstation; this development
-endpoint has no authentication or multi-client/session isolation. One game per server.
-Restart the controller for an independent run to reset the random generator too.
+Open <http://127.0.0.1:8765/> for actual sampled neural states and symbolic action
+keys. `fly_camera_follow` tracks SF; `fly_camera_free` releases the camera.
+`fly_stop` disables requests, invalidates pending replies and stops the hero.
 
-## Scaffolding inventory
+## Verified and unverified
 
-- Plain Lina hero unit spawned for local player 0 at a fixed Radiant location.
-  This bypasses normal hero selection for a smoke test; no other hero bots yet.
-- Engineered 16 inputs: position, HP/mana fractions, level, gold, attack range,
-  game clock, nearest visible enemy displacement/HP/presence/hero flag, three spell
-  availability flags. No fogged target telemetry. No inventory or global strategy.
-- Nearest-visible target selection is **engineered target prioritization**; it
-  limits the current policy and must be replaced by selectable target slots.
-- Engineered 13 actions: wait, eight 250-unit compass moves, attack selected target,
-  Dragon Slave, Light Strike Array, Laguna Blade. Spell levels are not allocated
-  by this policy yet, so spells remain masked until separately leveled for tests.
-- Network state persists between decisions; no additional temporal memory.
-- The random linear decoder and stochastic action sampling are **untrained**.
-  Game observations cannot bypass the recurrent sensory-to-motor pathway, but
-  the legal mask influences action choice outside the graph and exploration adds
-  randomness. Lesion tests must compare distributions and performance accordingly.
-- Requests run no faster than 5 Hz, one in flight; replies older than 1.5 seconds
-  are discarded. Enemy validity/visibility is rechecked before a target order.
-- `work/live.jsonl` records requested neural actions and observations. `FLY_ORDER`
-  in the Dota console records issued engine orders, not confirmed attack impact.
-  Raw client console logs can contain account metadata; do not publish them.
+On September 13, build 25265195 verified full-model observations and movement,
+camera tracking, stop behavior, and creation of nine bots. Corrected late hero
+creation now places SF at the map's Radiant spawn (-6700,-6700), rather than
+origin. Player-aware resource preloading avoids the previously observed crash.
+The first trained rollout got stuck repeating a direction. No completed full
+match, learned shopping, successful spell impact or competitive rank is verified.
 
-## Next milestones toward full matches
+## Disclosed scaffolding
 
-1. Verify engine-observation-request-order round trip and stop behavior.
-2. Add action acknowledgments, damage/kill/objective rewards, resettable episodes
-   and recording of demonstrations in real Dota. Train the full decoder on those
-   sequences, then compare intact, shuffled, disconnected and memory-reset models.
-3. Add selectable targets, skill allocation, items/shop, courier and teleport;
-   introduce allied/enemy bots and evaluate complete local matches.
-4. Replay imitation uses parsed `.dem` data only when observable state and labels
-   are aligned; YouTube footage is secondary and needs uncertain action labels.
-5. Report win rates against named bot versions, side/hero/seed coverage, farming,
-   deaths, objective damage and invalid actions. Human MMR remains unknown until
-   an independently justified calibration exists. Fly Purity is a disclosed
-   engineering audit, not proof of biological intelligence.
+- Normal SF hero creation after asynchronous precaching; engineered Radiant
+  spawn/respawn placement and 600 starting gold configuration.
+- Seventeen transport fields: position, HP/mana, level, gold, range, clock,
+  nearest visible enemy displacement/HP/presence/hero flag, and four cast flags.
+  The shipped checkpoint uses only own position, HP, mana and level; other
+  fields are zeroed before neural input to match replay training.
+- Fourteen actions: wait/continue previous order, eight compass moves, nearest
+  visible target attack, three razes, and Requiem. Target prioritization and
+  legality masking are engineered. Raze aiming is not automatic.
+- Fixed biological connectivity with simplified rate dynamics, native recurrent
+  state and an engineered trained linear readout. Omitting `--policy` uses an
+  explicitly untrained random decoder. Neither is validated brain physiology.
+- Fixed spell-upgrade priority in match mode is engineered, not learned.
+  Shopping, item use, courier, talents, teleport and buyback remain incomplete.
+- At most one request in flight, normal one-second decision cadence, cast-phase
+  and channel guards. Replies older than 1.5 seconds are discarded. Target
+  visibility and validity are rechecked before attack orders.
+- Local unauthenticated development endpoint on 127.0.0.1:8765. One game per
+  server. Seventeen bounded observations and fourteen legal bits are validated.
+  Restart the server for an independent run; `seq=0` resets neural state.
+- JSONL logs record requested actions; `FLY_ORDER` records issued engine orders,
+  not confirmed effects. Raw client console logs may contain account metadata
+  and must remain local.
 
-The [ModDota tutorial](https://moddota.com/scripting-introduction) documents reuse
-of the standard map. Actual APIs are checked against the installed Workshop build.
+See [SF training](../docs/SHADOW_FIEND.md) for the five-match dataset, weak first
+results, parser provenance, limitations and outstanding full-player controls.
+Next evaluation needs action acknowledgments, attack/damage/objective rewards,
+complete match outcomes, and intact/shuffled/disconnected/memory-reset controls.
+Win rate against named bots is a future metric; human MMR remains unknown.

@@ -10,3 +10,5 @@ data/malecns/processed/*.parquet
 data/malecns/cache/
 *.log
 work/
+data/replays/raw/
+data/replays/parsed/

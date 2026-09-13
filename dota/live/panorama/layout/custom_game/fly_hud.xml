@@ -1,0 +1,8 @@
+<root>
+  <scripts><include src="file://{resources}/scripts/custom_game/fly_hud.js" /></scripts>
+  <Panel hittest="false" style="horizontal-align:center;vertical-align:top;margin-top:90px;background-color:#111e;padding:12px;flow-children:down;">
+    <Label text="FRUIT FLY • SHADOW FIEND" style="color:#ff9855;font-size:22px;" />
+    <Label id="FlyStatus" text="Controller stopped — use fly_start" style="color:white;font-size:18px;" />
+    <Label id="FlyAction" text="Camera follows the controlled hero" style="color:#aaddee;font-size:18px;" />
+  </Panel>
+</root>

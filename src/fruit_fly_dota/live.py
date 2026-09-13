@@ -8,8 +8,8 @@ import numpy as np
 from .malecns import load_full
 from .full_neural import FullReservoir
 
-OBS_SIZE = 16
-ACTION_COUNT = 13  # wait, eight compass moves, attack, Q, W, R at visible target
+OBS_SIZE = 17
+ACTION_COUNT = 14  # wait, eight moves, attack, three razes, Requiem
 
 def validate(payload):
     if not isinstance(payload, dict): raise ValueError("Expected object")
@@ -24,39 +24,68 @@ def validate(payload):
     return seq, x, np.asarray(mask, dtype=bool)
 
 class Controller:
-    def __init__(self, reservoir, seed=0):
+    def __init__(self, reservoir, seed=0, policy=None):
         self.reservoir = reservoir
         self.rng = np.random.default_rng(seed)
         self.decoder = self.rng.normal(0, 1, (reservoir.feature_size, ACTION_COUNT))
         self.decoder[-1] = 0  # No constant action preference independent of graph.
         self.last_seq = -1
+        self.latest = None
+        self.self_fields=None
+        self.policy_name='untrained-full-connectome'
+        if policy:
+            with np.load(policy,allow_pickle=False) as data:
+                if int(data['input_size'])!=OBS_SIZE or int(data['action_count'])!=ACTION_COUNT:raise ValueError('Checkpoint schema mismatch')
+                self.decoder=data['decoder'].copy();self.self_fields=data['self_fields'].astype(int)
+                if self.decoder.shape!=(reservoir.feature_size,ACTION_COUNT) or not np.isfinite(self.decoder).all():raise ValueError('Invalid decoder')
+                if not np.array_equal(self.self_fields,[0,1,2,3,4]):raise ValueError('Unexpected input selection')
+            self.policy_name='pro-SF-own-state-imitation'
 
     def step(self, payload):
         seq, obs, legal = validate(payload)
         if seq == 0: self.reservoir.reset(); self.last_seq = -1
         if seq <= self.last_seq: raise ValueError("Stale sequence")
         started = time.perf_counter()
-        features = self.reservoir.features(obs)
+        neural_obs=obs.copy()
+        if self.self_fields is not None:
+            neural_obs[:]=0;neural_obs[self.self_fields]=obs[self.self_fields]
+        features = self.reservoir.features(neural_obs)
         # Sampling is explicit engineered exploration. This readout is UNTRAINED.
-        logits = features @ self.decoder * 30
+        logits = features @ self.decoder * (30 if self.self_fields is None else 1)
         logits[~legal] = -np.inf
         p = np.exp(logits - logits.max()); p /= p.sum()
-        action = int(self.rng.choice(ACTION_COUNT, p=p))
+        action = int(self.rng.choice(ACTION_COUNT, p=p)) if self.self_fields is None else int(np.argmax(logits))
         self.last_seq = seq
-        return dict(seq=seq, action=action, obs=obs.tolist(), legal=legal.astype(int).tolist(),
+        result = dict(seq=seq, action=action, obs=obs.tolist(), legal=legal.astype(int).tolist(),
                     feature_norm=float(np.linalg.norm(features[:-1])),
-                    decision_ms=(time.perf_counter()-started)*1000, policy="untrained-full-connectome",
+                    decision_ms=(time.perf_counter()-started)*1000, policy=self.policy_name,
                     wall_time=time.time())
+        sample=np.linspace(0,self.reservoir.n-1,min(240,self.reservoir.n),dtype=int)
+        self.latest=dict(**result, neurons=self.reservoir.n,
+                         sampled_indices=sample.tolist(),activity=self.reservoir.state[sample].tolist(),
+                         motor_pools=features[:-1].tolist(),probabilities=p.tolist())
+        return result
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--log", default="work/live.jsonl")
+    parser.add_argument('--policy',help='Full-model SF readout checkpoint')
     args = parser.parse_args()
     w, sensory, motor, manifest = load_full()
-    controller = Controller(FullReservoir(w, sensory, motor, input_size=OBS_SIZE))
+    controller = Controller(FullReservoir(w, sensory, motor, input_size=OBS_SIZE),policy=args.policy)
     logpath = Path(args.log); logpath.parent.mkdir(parents=True, exist_ok=True)
     class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path == '/state':
+                body=json.dumps(controller.latest or dict(status='Waiting for real Dota observations')).encode()
+                mime='application/json'
+            elif self.path == '/':
+                body=Path(__file__).with_name('dashboard.html').read_bytes(); mime='text/html; charset=utf-8'
+            else: self.send_error(404); return
+            self.send_response(200); self.send_header('Content-Type',mime)
+            self.send_header('Cache-Control','no-store'); self.send_header('Content-Length',str(len(body)))
+            self.end_headers(); self.wfile.write(body)
         def do_POST(self):
             if self.path != "/step": self.send_error(404); return
             try:
@@ -73,7 +102,7 @@ def main():
         def log_message(self, *args): pass
     server = HTTPServer(("127.0.0.1", args.port), Handler)
     server.timeout = 2
-    print(f"Ready: {manifest['selected_neurons']} neurons; localhost:{args.port}; UNTRAINED", flush=True)
+    print(f"Ready: {manifest['selected_neurons']} neurons; localhost:{args.port}; {controller.policy_name}", flush=True)
     try: server.serve_forever()
     except KeyboardInterrupt: pass
     finally: server.server_close()
