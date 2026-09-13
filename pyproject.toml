@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fruit-fly-dota"
+version = "0.1.0"
+description = "Auditable connectome-derived reservoir experiments in a toy lane"
+requires-python = ">=3.11"
+dependencies = ["numpy>=2", "scipy>=1.14", "pandas>=2", "pyarrow>=18"]
+
+[project.scripts]
+fly-dota = "fruit_fly_dota.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

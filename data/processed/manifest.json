@@ -1,0 +1,21 @@
+{
+  "source_url": "https://raw.githubusercontent.com/philshiu/Drosophila_brain_model/91bdd1e7dcf193f3e7ca5a8933497fcef63b7960/Connectivity_783.parquet",
+  "upstream_revision": "91bdd1e7dcf193f3e7ca5a8933497fcef63b7960",
+  "dataset": "FlyWire FAFB v783, Shiu repository derivative",
+  "source_sha256": "efeb23fb99098e9c390f6869969b2a121a2ee92c833cfc45ecb2c1d8e1af0347",
+  "source_rows": 15091983,
+  "selected_neurons": 256,
+  "directed_pairs": 5016,
+  "synapse_count": 199069,
+  "selection": "Top incident synapse count, stable ID tie break; induced subgraph",
+  "weights_sha256": "f2c71b39a108200f0e49b94cc21edb17b58007ac7a175a18cc811d139deb0293",
+  "ids_sha256": "28e045897ce6308eb5a6508fb6ca472c85a4baf319770cc8154f40104e4fe971",
+  "limitations": [
+    "Connectivity and upstream inferred signs only",
+    "No anatomical input/output annotation",
+    "Not MaleCNS",
+    "Not a whole brain",
+    "Upstream table is a derivative, not raw EM data"
+  ],
+  "attribution": "FlyWire Consortium; Dorkenwald et al. 2024; Shiu et al. 2024. See docs/RESEARCH.md and data/raw/UPSTREAM_LICENSE."
+}

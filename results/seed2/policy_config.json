@@ -1,0 +1,6 @@
+{
+  "seed": 2,
+  "ablation": "intact",
+  "memory": "native",
+  "connectome_sha256": "f2c71b39a108200f0e49b94cc21edb17b58007ac7a175a18cc811d139deb0293"
+}
