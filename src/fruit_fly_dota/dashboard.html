@@ -5,8 +5,8 @@
 const names=['Wait','Move east →','Move northeast ↗','Move north ↑','Move northwest ↖','Move west ←','Move southwest ↙','Move south ↓','Move southeast ↘','Attack','Near raze · Q','Medium raze · W','Far raze · E','Requiem · Y'];
 let last=null;const canvas=document.querySelector('#brain'),ctx=canvas.getContext('2d');
 function render(s){const stale=!s.wall_time||Date.now()/1000-s.wall_time>2;
- document.querySelector('#status').textContent=stale?'STOPPED / waiting for live observations':'LIVE • '+s.policy;
- document.querySelector('#move').textContent=stale?'No current command':names[s.action];
+ document.querySelector('#status').textContent=stale?'STOPPED / waiting for live observations':'LIVE • '+s.policy+' • '+s.control_mode+' • Reward '+Number(s.reward||0).toFixed(2)+' • Total '+Number(s.total_reward||0).toFixed(2)+' • Learning updates '+(s.learning_updates||0);
+ document.querySelector('#move').textContent=stale?'No current command':s.assisted&&s.action<=8?'Assisted lane movement / auto-attack':names[s.action];
  document.querySelectorAll('.key').forEach(k=>k.classList.toggle('active',!stale&&Number(k.dataset.a)===s.action));
  if(!s.activity)return; document.querySelector('#neurons').textContent=s.neurons.toLocaleString()+' model neurons';
  document.querySelector('#latency').textContent=s.decision_ms.toFixed(1)+' ms / decision';document.querySelector('#tick').textContent='Decision '+s.seq;

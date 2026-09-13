@@ -1,5 +1,9 @@
 # Full model: real-map integration
 
+For the new explicitly assisted mode and online reward updates, see
+[live learning](../docs/LIVE_LEARNING.md). The unassisted setup below remains
+available on a fresh map without `fly_play`.
+
 This isolated Workshop Tools addon uses Valve's standard `dota` map. It does not
 replace stock scripts or use matchmaking. Install Workshop Tools through Steam.
 

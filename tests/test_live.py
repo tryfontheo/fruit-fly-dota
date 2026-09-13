@@ -33,4 +33,15 @@ def test_live_lua_compiles():
     from lupa import LuaRuntime
     lua=LuaRuntime()
     # Compiles/defines functions; engine API execution is tested in the real client.
-    lua.execute(Path('dota/live/scripts/vscripts/addon_game_mode.lua').read_text())
+    lua.execute(Path('dota/live/scripts/vscripts/addon_game_mode.lua').read_text(encoding='utf-8'))
+
+def test_reward_is_applied_once_to_previous_decision():
+    brain=FullReservoir(csr_matrix(([1.],([1],[0])),shape=(2,2)),[0],[1],input_size=OBS_SIZE,pools=1)
+    c=Controller(brain,learn=True)
+    c.step(payload(0))
+    p=payload(1);p['reward']=1
+    result=c.step(p)
+    assert result['learning_updates']==1
+    saved=c.learner.weights.copy()
+    with pytest.raises(ValueError):c.step(p)
+    np.testing.assert_array_equal(saved,c.learner.weights)

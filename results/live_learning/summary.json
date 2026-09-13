@@ -1,0 +1,17 @@
+{
+  "status": "Interrupted assisted development rollout; not a complete match or performance evaluation",
+  "neurons": 176422,
+  "decisions": 135,
+  "positive_feedback_steps": 10,
+  "negative_feedback_steps": 1,
+  "total_received_reward": -1.673,
+  "learning_updates": 11,
+  "maximum_observed_level": 3,
+  "assistance": "Engineered route, attack-move, retreat and skill priority; native shopping failed in this first run",
+  "recovery": "All 135 sampled decisions reproduced exactly before saving adapter updates",
+  "limitations": [
+    "No unassisted performance improvement established",
+    "No full match outcome",
+    "Reward credit includes effects of scripted assistance"
+  ]
+}

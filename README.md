@@ -27,6 +27,13 @@ Start the trained controller with
 Watch actual sampled neural activity and symbolic actions at
 <http://127.0.0.1:8765/>. Use `fly_camera_follow` in the local addon to follow SF.
 
+**Live learning development mode:** add `--learn` to enable reward-modulated
+readout updates, then use `fly_play` for explicitly scripted assistance with
+mid-lane movement, attack-move, retreat, skill levels and a paid custom-shop
+adapter. This route has produced real last-hit rewards, tower-damage rewards,
+level gains and death penalties. It is heavily assisted and does not establish
+learned full-game competence. See [reward rules and limitations](docs/LIVE_LEARNING.md).
+
 On September 13 the full graph received real observations and issued movement
 orders in Dota build 25265195; positions changed and `fly_stop` stopped new orders.
 See [engine smoke-test evidence](results/live_smoke/summary.json). Attack/spell

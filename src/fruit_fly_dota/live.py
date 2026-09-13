@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 from .malecns import load_full
 from .full_neural import FullReservoir
+from .reinforcement import RewardLearner
 
 OBS_SIZE = 17
 ACTION_COUNT = 14  # wait, eight moves, attack, three razes, Requiem
@@ -24,7 +25,7 @@ def validate(payload):
     return seq, x, np.asarray(mask, dtype=bool)
 
 class Controller:
-    def __init__(self, reservoir, seed=0, policy=None):
+    def __init__(self, reservoir, seed=0, policy=None, learn=False):
         self.reservoir = reservoir
         self.rng = np.random.default_rng(seed)
         self.decoder = self.rng.normal(0, 1, (reservoir.feature_size, ACTION_COUNT))
@@ -33,6 +34,7 @@ class Controller:
         self.latest = None
         self.self_fields=None
         self.policy_name='untrained-full-connectome'
+        self.learner=RewardLearner(reservoir.feature_size,ACTION_COUNT) if learn else None
         if policy:
             with np.load(policy,allow_pickle=False) as data:
                 if int(data['input_size'])!=OBS_SIZE or int(data['action_count'])!=ACTION_COUNT:raise ValueError('Checkpoint schema mismatch')
@@ -43,8 +45,15 @@ class Controller:
 
     def step(self, payload):
         seq, obs, legal = validate(payload)
-        if seq == 0: self.reservoir.reset(); self.last_seq = -1
+        reward=payload.get('reward',0)
+        assisted=payload.get('assisted',False)
+        if type(assisted) is not bool:raise ValueError('Invalid assistance flag')
+        if type(reward) not in (int,float) or not np.isfinite(reward) or abs(reward)>20:raise ValueError('Invalid reward')
+        if seq == 0:
+            self.reservoir.reset(); self.last_seq = -1
+            if self.learner:self.learner.reset_episode()
         if seq <= self.last_seq: raise ValueError("Stale sequence")
+        if self.learner:self.learner.feedback(reward)
         started = time.perf_counter()
         neural_obs=obs.copy()
         if self.self_fields is not None:
@@ -52,14 +61,21 @@ class Controller:
         features = self.reservoir.features(neural_obs)
         # Sampling is explicit engineered exploration. This readout is UNTRAINED.
         logits = features @ self.decoder * (30 if self.self_fields is None else 1)
+        if self.learner:logits += self.learner.logits(features)
         logits[~legal] = -np.inf
         p = np.exp(logits - logits.max()); p /= p.sum()
-        action = int(self.rng.choice(ACTION_COUNT, p=p)) if self.self_fields is None else int(np.argmax(logits))
+        action = int(self.rng.choice(ACTION_COUNT, p=p)) if self.self_fields is None or self.learner else int(np.argmax(logits))
+        if self.learner:self.learner.record(features,p,action)
         self.last_seq = seq
         result = dict(seq=seq, action=action, obs=obs.tolist(), legal=legal.astype(int).tolist(),
                     feature_norm=float(np.linalg.norm(features[:-1])),
                     decision_ms=(time.perf_counter()-started)*1000, policy=self.policy_name,
-                    wall_time=time.time())
+                    wall_time=time.time(),reward=reward,
+                    total_reward=self.learner.total_reward if self.learner else 0,
+                    learning_updates=self.learner.updates if self.learner else 0,
+                    learning='reward-modulated engineered readout' if self.learner else 'disabled')
+        result['assisted']=assisted
+        result['control_mode']='SCRIPT-ASSISTED: route, attack-move, retreat, shop, levels' if assisted else 'neural actions with legality mask'
         sample=np.linspace(0,self.reservoir.n-1,min(240,self.reservoir.n),dtype=int)
         self.latest=dict(**result, neurons=self.reservoir.n,
                          sampled_indices=sample.tolist(),activity=self.reservoir.state[sample].tolist(),
@@ -71,9 +87,19 @@ def main():
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--log", default="work/live.jsonl")
     parser.add_argument('--policy',help='Full-model SF readout checkpoint')
+    parser.add_argument('--learn',action='store_true',help='Experimental online reward-modulated readout updates')
+    parser.add_argument('--resume-learning',help='Resume an experimental readout adapter checkpoint')
     args = parser.parse_args()
     w, sensory, motor, manifest = load_full()
-    controller = Controller(FullReservoir(w, sensory, motor, input_size=OBS_SIZE),policy=args.policy)
+    controller = Controller(FullReservoir(w, sensory, motor, input_size=OBS_SIZE),policy=args.policy,learn=args.learn)
+    if args.resume_learning:
+        if not controller.learner:raise ValueError('--resume-learning requires --learn')
+        with np.load(args.resume_learning,allow_pickle=False) as saved:
+            weights=saved['weights']
+            if weights.shape!=controller.learner.weights.shape or not np.isfinite(weights).all():raise ValueError('Invalid learning checkpoint')
+            controller.learner.weights[:]=weights
+            controller.learner.total_reward=float(saved['total_reward'])
+            controller.learner.updates=int(saved['updates'])
     logpath = Path(args.log); logpath.parent.mkdir(parents=True, exist_ok=True)
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
@@ -96,6 +122,9 @@ def main():
             except (ValueError, TypeError, OverflowError):
                 self.send_error(400); return
             with logpath.open("a", encoding="utf-8") as f: f.write(json.dumps(result)+"\n")
+            if controller.learner and result['seq']%25==0:
+                np.savez_compressed(logpath.with_suffix('.learning.npz'),weights=controller.learner.weights,
+                                    total_reward=controller.learner.total_reward,updates=controller.learner.updates)
             body = f'{result["seq"]}|{result["action"]}'.encode()
             self.send_response(200); self.send_header("Content-Type", "text/plain")
             self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
@@ -105,6 +134,10 @@ def main():
     print(f"Ready: {manifest['selected_neurons']} neurons; localhost:{args.port}; {controller.policy_name}", flush=True)
     try: server.serve_forever()
     except KeyboardInterrupt: pass
-    finally: server.server_close()
+    finally:
+        server.server_close()
+        if controller.learner:
+            np.savez_compressed(logpath.with_suffix('.learning.npz'),weights=controller.learner.weights,
+                                total_reward=controller.learner.total_reward,updates=controller.learner.updates)
 
 if __name__ == "__main__": main()
