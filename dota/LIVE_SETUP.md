@@ -1,5 +1,8 @@
 # Full model: real-map integration
 
+**Current instructions:** [unassisted schema v2](../docs/UNASSISTED.md). The
+checkpoint command and schema below describe the earlier implementation.
+
 For the new explicitly assisted mode and online reward updates, see
 [live learning](../docs/LIVE_LEARNING.md). The unassisted setup below remains
 available on a fresh map without `fly_play`.

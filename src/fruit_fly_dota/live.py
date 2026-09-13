@@ -9,8 +9,8 @@ from .malecns import load_full
 from .full_neural import FullReservoir
 from .reinforcement import RewardLearner
 
-OBS_SIZE = 17
-ACTION_COUNT = 14  # wait, eight moves, attack, three razes, Requiem
+OBS_SIZE = 33
+ACTION_COUNT = 25  # combat 0..13; upgrade 14..17; buy 18..24
 
 def validate(payload):
     if not isinstance(payload, dict): raise ValueError("Expected object")
@@ -33,7 +33,7 @@ class Controller:
         self.last_seq = -1
         self.latest = None
         self.self_fields=None
-        self.policy_name='untrained-full-connectome'
+        self.policy_name='full-observation-RL-from-scratch' if learn else 'untrained-full-connectome'
         self.learner=RewardLearner(reservoir.feature_size,ACTION_COUNT) if learn else None
         if policy:
             with np.load(policy,allow_pickle=False) as data:
@@ -47,7 +47,7 @@ class Controller:
         seq, obs, legal = validate(payload)
         reward=payload.get('reward',0)
         assisted=payload.get('assisted',False)
-        if type(assisted) is not bool:raise ValueError('Invalid assistance flag')
+        if type(assisted) is not bool or assisted:raise ValueError('Script-assisted sessions are disabled')
         if type(reward) not in (int,float) or not np.isfinite(reward) or abs(reward)>20:raise ValueError('Invalid reward')
         if seq == 0:
             self.reservoir.reset(); self.last_seq = -1

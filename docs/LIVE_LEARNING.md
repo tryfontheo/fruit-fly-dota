@@ -1,5 +1,9 @@
 # Live reward learning and assisted play
 
+Historical assisted mode at commit a066314. The user subsequently rejected
+tactical scripts; see [current unassisted mode](UNASSISTED.md). Commands and
+checkpoint shapes below describe that earlier implementation.
+
 This is an experimental dopamine-like scalar reward, **not biological dopamine**.
 All 176,422 model neurons still run. Anatomical connections remain fixed. Only a
 separate engineered linear action adapter changes online.

@@ -1,5 +1,12 @@
 # fruit-fly-dota
 
+**Current mode: unassisted decision learning.** Tactical scripts were removed at
+the user's request. Run `python -m fruit_fly_dota.live --learn` with the v2 addon.
+The network chooses movement, attacks, spells, upgrades and listed purchases;
+damage now incurs a penalty. See [current setup and limitations](docs/UNASSISTED.md).
+The 33-input/25-action run starts from scratch; older checkpoints and assisted
+results below are historical and incompatible with this new schema.
+
 A local **connectome-derived agent research project**, targeting full real Dota
 matches in isolated Workshop Tools games. We have a trained small toy-lane
 baseline, a running **176,422-neuron MaleCNS sparse model**, and a real-map
@@ -22,12 +29,12 @@ The initial live test got stuck repeatedly choosing a direction; it is not a
 competent full-match policy. No public/ranked matchmaking is implemented.
 Shopping, learned leveling, objectives and full-match RL remain incomplete.
 
-Start the trained controller with
-`python -m fruit_fly_dota.live --policy results/sf_replay/policy.npz`.
+The historical replay-trained controller used
+`python -m fruit_fly_dota.live --policy results/sf_replay/policy.npz` at commit e867a2c.
 Watch actual sampled neural activity and symbolic actions at
 <http://127.0.0.1:8765/>. Use `fly_camera_follow` in the local addon to follow SF.
 
-**Live learning development mode:** add `--learn` to enable reward-modulated
+**Historical assisted development mode (a066314):** add `--learn` to enable reward-modulated
 readout updates, then use `fly_play` for explicitly scripted assistance with
 mid-lane movement, attack-move, retreat, skill levels and a paid custom-shop
 adapter. This route has produced real last-hit rewards, tower-damage rewards,

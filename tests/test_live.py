@@ -45,3 +45,17 @@ def test_reward_is_applied_once_to_previous_decision():
     saved=c.learner.weights.copy()
     with pytest.raises(ValueError):c.step(p)
     np.testing.assert_array_equal(saved,c.learner.weights)
+
+def test_assisted_payload_is_rejected():
+    brain=FullReservoir(csr_matrix(([1.],([1],[0])),shape=(2,2)),[0],[1],input_size=OBS_SIZE,pools=1)
+    p=payload();p['assisted']=True
+    with pytest.raises(ValueError):Controller(brain,learn=True).step(p)
+
+def test_damage_feedback_scaling():
+    from pathlib import Path
+    from lupa import LuaRuntime
+    rules=LuaRuntime().execute(Path('dota/live/scripts/vscripts/reward_rules.lua').read_text())
+    assert rules.damage_taken(100,1000,False)==pytest.approx(-.2)
+    assert rules.damage_taken(100,1000,True)==pytest.approx(-.4)
+    assert rules.damage_taken(-100,1000,True)==0
+    assert rules.damage_taken(10000,1000,True)==-4
