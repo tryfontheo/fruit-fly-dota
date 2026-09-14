@@ -49,6 +49,13 @@ class Controller:
     def step(self, payload):
         seq, obs, legal = validate(payload)
         reward=payload.get('reward',0)
+        components=payload.get('reward_components',{})
+        version=payload.get('reward_version','legacy')
+        if version not in ('legacy','lane-v2'):raise ValueError('Unknown reward version')
+        if not isinstance(components,dict) or len(components)>12:raise ValueError('Invalid reward components')
+        for name,value in components.items():
+            if name not in ('death','hero_kill','building_kill','last_hit','deny','tower_damage_taken','damage_taken','building_damage','creep_damage','hero_damage'):raise ValueError('Unknown reward component')
+            if type(value) not in (int,float) or not np.isfinite(value) or abs(value)>10000:raise ValueError('Invalid reward component')
         dt=payload.get('dt',1.)
         if type(dt) not in (int,float) or not np.isfinite(dt) or not 0<dt<=10:raise ValueError('Invalid elapsed time')
         if type(payload.get('round_end',False)) is not bool:raise ValueError('Invalid round boundary')
@@ -90,6 +97,8 @@ class Controller:
                     learning='reward-modulated engineered readout' if self.learner else 'disabled')
         result['assisted']=assisted
         result['dt']=dt
+        result['reward_version']=version
+        result['reward_components']=components
         result['rounds']=self.rounds
         result['round_reward']=self.round_reward
         result['recent_rounds']=self.history[-10:]

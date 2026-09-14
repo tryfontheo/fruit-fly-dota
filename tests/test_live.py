@@ -79,3 +79,40 @@ def test_atomic_checkpoint_contains_action_schema(tmp_path):
         assert int(saved['action_count'])==26
         np.testing.assert_array_equal(saved['decoder'],c.decoder)
     assert not path.with_suffix('.tmp').exists()
+
+def test_damage_shaping_cannot_outpay_last_hit_or_farm_regeneration():
+    from pathlib import Path
+    from lupa import LuaRuntime
+    lua=LuaRuntime();rules=lua.execute(Path('dota/live/scripts/vscripts/reward_rules.lua').read_text())
+    ledger=lua.table();target=lua.table()
+    total=sum(rules.damage_dealt(ledger,target,100,1000,'creep') for _ in range(100))
+    assert total==pytest.approx(.1)
+    assert rules.last_hit>=10*total-1e-9
+    assert rules.damage_dealt(ledger,target,1000,1000,'creep')==pytest.approx(0)
+    assert rules.damage_dealt(ledger,lua.table(),1000,1000,'creep')==pytest.approx(.1)
+    assert rules.damage_dealt(ledger,lua.table(),-100,1000,'hero')==0
+
+def test_reward_components_are_logged_and_validated():
+    brain=FullReservoir(csr_matrix(([1.],([1],[0])),shape=(2,2)),[0],[1],input_size=OBS_SIZE,pools=1)
+    c=Controller(brain,learn=True);p=payload(0)
+    p.update(reward=.01,reward_version='lane-v2',reward_components={'creep_damage':.01})
+    assert c.step(p)['reward_components']=={'creep_damage':.01}
+    p['reward_components']={'creep_damage':float('nan')}
+    with pytest.raises(ValueError):c.step(p)
+
+def test_passive_income_uses_game_time_not_decision_count():
+    from pathlib import Path
+    from lupa import LuaRuntime
+    economy=LuaRuntime(unpack_returned_tuples=True).execute(Path('dota/live/scripts/vscripts/economy.lua').read_text())
+    previous,amount=economy.advance(None,0)
+    assert amount==0
+    previous,amount=economy.advance(previous,60)
+    assert amount==100
+    # Repeated calls at the same game time (including pause) pay nothing.
+    for _ in range(100):
+        previous,amount=economy.advance(previous,60)
+        assert amount==0
+    previous,amount=economy.advance(previous,60.6)
+    assert amount==1
+    previous,amount=economy.advance(previous,0)
+    assert previous==0 and amount==0

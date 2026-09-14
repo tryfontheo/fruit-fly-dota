@@ -17,3 +17,5 @@ The v3 26-action schema starts a separate checkpoint because the previous 25-act
 ## Local verification — September 13, 2026
 
 26 tests passed. Real Dota automatically started SF, spawned practice enemies, issued neural movement/attack/upgrade orders, applied damage/death feedback, and completed an automatic reset after death. At the first reset the learner had 58 reward updates and cumulative reward -5.6654; negative return is not successful play. Killing only the project learner worker demonstrated supervisor restart and recovery of the saved 58 updates and round count. Observed throughput was about 5 decisions/second at a requested 10 Hz. Frenzy is wired and compiled but an actual Frenzy cast was not observed in this initial run.
+
+Reward tuning and economy update: see [lane-v2 reward design](REWARDS.md). Passive gold is explicitly 100 GPM; idle punishment is removed, creep damage has a capped +0.10 budget, and last hits earn +1.00. Reward-version tags distinguish these runs from the initial verification above.

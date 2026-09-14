@@ -1,4 +1,6 @@
-# Unassisted decision learning, observation/action schema v2
+# Unassisted decision learning
+
+For current standalone operation, use [autonomous practice](AUTONOMOUS.md). The reward design and passive economy are documented in [REWARDS.md](REWARDS.md).
 
 The user rejected scripted tactical assistance. The live addon no longer loads
 the historical assistance module. No mid-lane route, attack-move, automatic
@@ -29,12 +31,12 @@ presence; available skill points; four skill levels; and counts of seven listed
 items. Tower information is supplied only while visible. There is no suggested
 move, route, retreat threshold or teacher action in the inputs.
 
-The 25 choices are wait/continue, eight compass moves, attack, three razes,
-Requiem, four skill upgrades (raze, aura, Frenzy, Requiem), and seven basic item
+The 26 choices are wait/continue, eight compass moves, attack, three razes,
+Requiem, Frenzy activation (R), four skill upgrades (raze, aura, Frenzy, Requiem), and seven basic item
 purchases (boots, gloves, Band of Elvenskin, lifesteal, broadsword, Blade of
 Alacrity, Yasha recipe). A neural choice is required for every upgrade/purchase.
 This remains an incomplete player vocabulary: e.g. talents, courier, arbitrary
-targets, Frenzy activation, item use, teleport and buyback are not implemented.
+targets, item use, teleport and buyback are not implemented.
 
 Mechanical scaffolding remains explicit: structured observations, nearest-visible
 target slot, legal-action masks, fixed compass distances, and the paid fountain

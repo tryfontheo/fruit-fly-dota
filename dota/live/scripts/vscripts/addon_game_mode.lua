@@ -6,6 +6,8 @@ local matchMode=false
 local playerActions=nil
 local rewardRules=nil
 local rewardPending=0
+local rewardComponents={}
+local damageLedger=setmetatable({},{__mode="k"})
 local lastPosition=nil
 local idleSince=0
 local decisionInterval=.1
@@ -16,6 +18,8 @@ local roundEnded=false
 local practiceCreeps={}
 local function reward(value,reason)
   if not running then return end
+  if value==0 then return end
+  rewardComponents[reason]=(rewardComponents[reason] or 0)+value
   rewardPending=math.max(-20,math.min(20,rewardPending+value))
   print("FLY_REWARD",value,reason)
 end
@@ -43,16 +47,37 @@ function Activate()
   GameRules:SetHeroSelectionTime(0)
   GameRules:SetPreGameTime(0)
   GameRules:SetStartingGold(600)
+  -- Native passive ticks did not credit this local custom game in live tests.
+  -- Disable them before the single explicit 100 GPM economy timer.
+  GameRules:SetGoldPerTick(0)
+  local economy=require("economy")
+  local goldTime=nil
+  mode:SetContextThink("FlyPassiveGold",function()
+    local now=GameRules:GetDOTATime(false,false)
+    if GameRules:IsGamePaused() or now<0 then return .1 end
+    local amount
+    goldTime,amount=economy.advance(goldTime,now)
+    if amount>0 then
+      for id=0,23 do
+        if PlayerResource:IsValidPlayerID(id) then
+          PlayerResource:ModifyGold(id,amount,true,DOTA_ModifyGold_GameTick)
+        end
+      end
+    end
+    return .1
+  end,.1)
   GameRules:SetCustomGameSetupTimeout(0)
   ListenToGameEvent("entity_killed",function(e)
     if not controlledHero then return end
     local victim=e.entindex_killed and EntIndexToHScript(e.entindex_killed)
     local attacker=e.entindex_attacker and EntIndexToHScript(e.entindex_attacker)
-    if victim==controlledHero then reward(-3,"death")
+    if victim==controlledHero then reward(rewardRules.death,"death")
     elseif attacker==controlledHero and victim and victim:GetTeamNumber()~=controlledHero:GetTeamNumber() then
-      if victim:IsRealHero() then reward(3,"hero_kill")
-      elseif victim:IsBuilding() then reward(2,"building_kill")
-      elseif victim:IsCreep() then reward(.25,"last_hit") end
+      if victim:IsRealHero() then reward(rewardRules.hero_kill,"hero_kill")
+      elseif victim:IsBuilding() then reward(rewardRules.building_kill,"building_kill")
+      elseif victim:IsCreep() then reward(rewardRules.last_hit,"last_hit") end
+    elseif attacker==controlledHero and victim and victim:IsCreep() and victim:GetTeamNumber()==controlledHero:GetTeamNumber() then
+      reward(rewardRules.deny,"deny")
     end
   end,nil)
   ListenToGameEvent("entity_hurt",function(e)
@@ -63,8 +88,11 @@ function Activate()
       local tower=attacker:IsTower()
       reward(rewardRules.damage_taken(e.damage,controlledHero:GetMaxHealth(),tower),tower and "tower_damage_taken" or "damage_taken")
     end
-    if attacker==controlledHero and victim and victim:IsBuilding() and victim:GetTeamNumber()~=controlledHero:GetTeamNumber() then
-      reward(math.min(.2,math.max(0,tonumber(e.damage) or 0)*.001),"objective_damage")
+    if attacker==controlledHero and victim and victim:GetTeamNumber()~=controlledHero:GetTeamNumber() then
+      local kind=victim:IsBuilding() and "building" or (victim:IsRealHero() and "hero" or (victim:IsCreep() and "creep" or nil))
+      if kind then
+        reward(rewardRules.damage_dealt(damageLedger,victim,e.damage,victim:GetMaxHealth(),kind),kind.."_damage")
+      end
     end
   end,nil)
   Convars:RegisterCommand("fly_start", function()
@@ -95,7 +123,7 @@ function Activate()
         print("FLY_HERO_READY")
       end,0)
     end
-    seq=0; rewardPending=0;lastPosition=nil;idleSince=Time();lastDecisionTime=nil;running=true; print("FLY_START_CONTROLLER")
+    seq=0; rewardPending=0;rewardComponents={};lastPosition=nil;idleSince=Time();lastDecisionTime=nil;running=true; print("FLY_START_CONTROLLER")
   end, "Enable full-connectome controller", 0)
   Convars:RegisterCommand("fly_stop", stop, "Stop controller and hero", 0)
   Convars:RegisterCommand("fly_camera_follow",function() if controlledHero then PlayerResource:SetCameraTarget(0,controlledHero) end end,"Follow fly hero",0)
@@ -176,9 +204,7 @@ function FlyThink()
   local target=units[1]
   if target and not h:CanEntityBeSeenByMyTeam(target) then target=nil end
   local delta=target and (target:GetAbsOrigin()-pos) or Vector(0,0,0)
-  if not lastPosition or target or (pos-lastPosition):Length2D()>=15 or h:GetHealth()/h:GetMaxHealth()<=.9 then
-    lastPosition=pos;idleSince=Time()
-  elseif Time()-idleSince>=10 then reward(-.1,"stuck_or_idle");idleSince=Time() end
+  -- No movement/idle reward: waiting and holding position may be correct.
   local obs={pos.x/8192,pos.y/8192,h:GetHealth()/h:GetMaxHealth(),h:GetMana()/math.max(1,h:GetMaxMana()),
     h:GetLevel()/30,h:GetGold()/30000,h:Script_GetAttackRange()/2000,GameRules:GetDOTATime(false,false)/7200,
     delta.x/1600,delta.y/1600,target and target:GetHealth()/math.max(1,target:GetMaxHealth()) or 0,
@@ -210,8 +236,12 @@ function FlyThink()
   local epoch=generation; local sent=Time(); pending=true
   local req=CreateHTTPRequestScriptVM("POST","http://127.0.0.1:8765/step")
   local deliveredReward=rewardPending;rewardPending=0
+  local componentParts={}
+  for reason,value in pairs(rewardComponents) do table.insert(componentParts,'"'..reason..'":'..value) end
+  rewardComponents={}
+  local componentJSON="{"..table.concat(componentParts,",").."}"
   local deliveredRound=roundEnded;roundEnded=false
-  req:SetHTTPRequestRawPostBody("application/json",'{"seq":'..requestSeq..',"dt":'..dt..',"round_end":'..tostring(deliveredRound)..',"assisted":false,"reward":'..deliveredReward..',"obs":['..table.concat(obs,",")..'],"legal":['..table.concat(legal,",")..']}')
+  req:SetHTTPRequestRawPostBody("application/json",'{"seq":'..requestSeq..',"dt":'..dt..',"round_end":'..tostring(deliveredRound)..',"reward_version":"'..rewardRules.version..'","reward_components":'..componentJSON..',"assisted":false,"reward":'..deliveredReward..',"obs":['..table.concat(obs,",")..'],"legal":['..table.concat(legal,",")..']}')
   req:SetHTTPRequestAbsoluteTimeoutMS(1500)
   req:Send(function(response)
     if epoch~=generation then return end
