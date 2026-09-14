@@ -59,3 +59,23 @@ def test_damage_feedback_scaling():
     assert rules.damage_taken(100,1000,True)==pytest.approx(-.4)
     assert rules.damage_taken(-100,1000,True)==0
     assert rules.damage_taken(10000,1000,True)==-4
+
+def test_round_terminal_reward_precedes_trace_reset():
+    brain=FullReservoir(csr_matrix(([1.],([1],[0])),shape=(2,2)),[0],[1],input_size=OBS_SIZE,pools=1)
+    c=Controller(brain,learn=True)
+    c.step(payload(0))
+    p=payload(1);p.update(reward=-3,round_end=True)
+    r=c.step(p)
+    assert r['learning_updates']==1
+    assert r['rounds']==1 and r['recent_rounds'][0]['reward']==-3
+    assert np.any(c.learner.weights)
+
+def test_atomic_checkpoint_contains_action_schema(tmp_path):
+    from fruit_fly_dota.live import save_learning
+    brain=FullReservoir(csr_matrix(([1.],([1],[0])),shape=(2,2)),[0],[1],input_size=OBS_SIZE,pools=1)
+    c=Controller(brain,learn=True);c.step(payload(0))
+    path=tmp_path/'test.npz';save_learning(c,path)
+    with np.load(path,allow_pickle=False) as saved:
+        assert int(saved['action_count'])==26
+        np.testing.assert_array_equal(saved['decoder'],c.decoder)
+    assert not path.with_suffix('.tmp').exists()

@@ -1,10 +1,14 @@
+# Autonomous local practice
+
+See [the standalone training guide](docs/AUTONOMOUS.md) for automatic saving, repeated practice rounds, faster decisions and Frenzy (R).
+
 # fruit-fly-dota
 
 **Current mode: unassisted decision learning.** Tactical scripts were removed at
 the user's request. Run `python -m fruit_fly_dota.live --learn` with the v2 addon.
 The network chooses movement, attacks, spells, upgrades and listed purchases;
 damage now incurs a penalty. See [current setup and limitations](docs/UNASSISTED.md).
-The 33-input/25-action run starts from scratch; older checkpoints and assisted
+The 33-input/26-action run starts from scratch; older checkpoints and assisted
 results below are historical and incompatible with this new schema.
 
 A local **connectome-derived agent research project**, targeting full real Dota

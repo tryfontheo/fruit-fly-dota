@@ -26,13 +26,14 @@ class RewardLearner:
             np.clip(self.weights, -5, 5, out=self.weights)
             self.updates += 1
 
-    def record(self, features, probabilities, action):
+    def record(self, features, probabilities, action, elapsed=1.):
+        if not np.isfinite(elapsed) or not 0<elapsed<=10:raise ValueError('Invalid elapsed time')
         gradient = -probabilities.copy()
         gradient[action] += 1
         # No bias feature: reward adaptation still requires a neural signal.
         x = np.asarray(features).copy(); x[-1] = 0
         x /= max(np.linalg.norm(x), 1e-8)
-        self.trace = self.decay * self.trace + np.outer(x, gradient)
+        self.trace = self.decay**elapsed * self.trace + elapsed*np.outer(x, gradient)
 
     def logits(self, features):
         x = np.asarray(features).copy(); x[-1] = 0

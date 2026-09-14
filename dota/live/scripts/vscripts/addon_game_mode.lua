@@ -7,21 +7,30 @@ local playerActions=nil
 local rewardRules=nil
 local rewardPending=0
 local lastPosition=nil
-local stillTicks=0
+local idleSince=0
+local decisionInterval=.1
+local lastDecisionTime=nil
+local training=false
+local roundDeadline=0
+local roundEnded=false
+local practiceCreeps={}
 local function reward(value,reason)
   if not running then return end
   rewardPending=math.max(-20,math.min(20,rewardPending+value))
   print("FLY_REWARD",value,reason)
 end
 local function stop()
-  running=false; generation=generation+1; pending=false
+  training=false; running=false; generation=generation+1; pending=false
   local h=controlledHero
   if h then h:Stop() end
   local p=PlayerResource:GetPlayer(0)
   if p and h then CustomGameEventManager:Send_ServerToPlayer(p,"fly_status",{entity=h:entindex(),status="STOPPED",action="No current command"}) end
   print("FLY_STOP")
 end
-function Precache(context) PrecacheUnitByNameSync("npc_dota_hero_nevermore", context) end
+function Precache(context)
+  PrecacheUnitByNameSync("npc_dota_hero_nevermore", context)
+  PrecacheUnitByNameSync("npc_dota_creep_badguys_melee", context)
+end
 function Activate()
   playerActions=require("player_actions")
   rewardRules=require("reward_rules")
@@ -86,7 +95,7 @@ function Activate()
         print("FLY_HERO_READY")
       end,0)
     end
-    seq=0; rewardPending=0;lastPosition=nil;stillTicks=0;running=true; print("FLY_START_CONTROLLER")
+    seq=0; rewardPending=0;lastPosition=nil;idleSince=Time();lastDecisionTime=nil;running=true; print("FLY_START_CONTROLLER")
   end, "Enable full-connectome controller", 0)
   Convars:RegisterCommand("fly_stop", stop, "Stop controller and hero", 0)
   Convars:RegisterCommand("fly_camera_follow",function() if controlledHero then PlayerResource:SetCameraTarget(0,controlledHero) end end,"Follow fly hero",0)
@@ -103,15 +112,57 @@ function Activate()
     SendToServerConsole("dota_bot_populate")
     print("FLY_UNASSISTED: no scripted route, retreat, purchases or upgrades")
   end,"Populate bots without scripted control of SF",0)
-  mode:SetContextThink("FlyThink", FlyThink, .2)
+  Convars:RegisterCommand("fly_rate",function(_,value)
+    local hz=tonumber(value)
+    if not hz or hz<1 or hz>20 then print("Usage: fly_rate <1..20 decisions per second>");return end
+    decisionInterval=1/hz;print("FLY_DECISION_HZ",hz)
+  end,"Set requested neural decision frequency",0)
+  Convars:RegisterCommand("fly_train",function()
+    if not controlledHero then print("Use fly_start first");return end
+    training=true;running=true;roundDeadline=0
+    print("FLY_TRAIN: autonomous 90-second practice rounds; neural actions only")
+  end,"Start autonomous practice rounds",0)
+  mode:SetContextThink("FlyThink", FlyThink, decisionInterval)
+  local ok,auto=pcall(require,"auto_training")
+  if ok and auto then
+    local starting=false
+    mode:SetContextThink("FlyAutoStart",function()
+      if not PlayerResource:GetPlayer(0) then return 1 end
+      if not starting then starting=true;SendToServerConsole("fly_start");return 1 end
+      if not controlledHero then return 1 end
+      SendToServerConsole("fly_train")
+      return nil
+    end,1)
+  end
   print("FLY_ADDON_READY: use fly_start; fly_stop disables control")
 end
 local directions={{1,0},{.707,.707},{0,1},{-.707,.707},{-1,0},{-.707,-.707},{0,-1},{.707,-.707}}
 function FlyThink()
   if not running or not IsInToolsMode() or GameRules:IsGamePaused() then return .2 end
   local h=controlledHero
-  if not h or not h:IsAlive() then return .2 end
-  if pending then return .2 end
+  if not h then return .2 end
+  if training and not pending and (Time()>=roundDeadline or not h:IsAlive()) then
+    roundEnded=roundDeadline>0
+    for _,creep in ipairs(practiceCreeps) do
+      if not creep:IsNull() then UTIL_Remove(creep) end
+    end
+    practiceCreeps={}
+    if not h:IsAlive() then h:RespawnHero(false,false) end
+    h:Stop()
+    local origin=Vector(-1800,-1400,256)
+    FindClearSpaceForUnit(h,origin,true)
+    h:SetHealth(h:GetMaxHealth());h:SetMana(h:GetMaxMana())
+    for i=1,3 do
+      local creep=CreateUnitByName("npc_dota_creep_badguys_melee",origin+Vector(450,i*100-200,0),true,nil,nil,DOTA_TEAM_BADGUYS)
+      if creep then table.insert(practiceCreeps,creep) end
+    end
+    roundDeadline=Time()+90
+    lastPosition=nil;idleSince=Time()
+    PlayerResource:SetCameraTarget(0,h)
+    print("FLY_TRAIN_ROUND",seq)
+  end
+  if not h:IsAlive() then return .2 end
+  if pending then return decisionInterval end
   -- Do not overwrite channeling or a spell's cast point with a new move.
   if h:IsChanneling() then return .2 end
   for i=0,19 do
@@ -125,11 +176,9 @@ function FlyThink()
   local target=units[1]
   if target and not h:CanEntityBeSeenByMyTeam(target) then target=nil end
   local delta=target and (target:GetAbsOrigin()-pos) or Vector(0,0,0)
-  if lastPosition and not target and (pos-lastPosition):Length2D()<15 and h:GetHealth()/h:GetMaxHealth()>.9 then
-    stillTicks=stillTicks+1
-    if stillTicks>=10 then reward(-.1,"stuck_or_idle");stillTicks=0 end
-  else stillTicks=0 end
-  lastPosition=pos
+  if not lastPosition or target or (pos-lastPosition):Length2D()>=15 or h:GetHealth()/h:GetMaxHealth()<=.9 then
+    lastPosition=pos;idleSince=Time()
+  elseif Time()-idleSince>=10 then reward(-.1,"stuck_or_idle");idleSince=Time() end
   local obs={pos.x/8192,pos.y/8192,h:GetHealth()/h:GetMaxHealth(),h:GetMana()/math.max(1,h:GetMaxMana()),
     h:GetLevel()/30,h:GetGold()/30000,h:Script_GetAttackRange()/2000,GameRules:GetDOTATime(false,false)/7200,
     delta.x/1600,delta.y/1600,target and target:GetHealth()/math.max(1,target:GetMaxHealth()) or 0,
@@ -153,11 +202,16 @@ function FlyThink()
   end
   playerActions.append_legal(h,legal)
   playerActions.append_observation(h,obs)
+  local frenzy=h:FindAbilityByName("nevermore_frenzy")
+  legal[26]=(frenzy and frenzy:GetLevel()>0 and frenzy:IsFullyCastable() and not h:IsSilenced()) and 1 or 0
   local requestSeq=seq; seq=seq+1
+  local dt=lastDecisionTime and math.min(10,math.max(.001,Time()-lastDecisionTime)) or decisionInterval
+  lastDecisionTime=Time()
   local epoch=generation; local sent=Time(); pending=true
   local req=CreateHTTPRequestScriptVM("POST","http://127.0.0.1:8765/step")
   local deliveredReward=rewardPending;rewardPending=0
-  req:SetHTTPRequestRawPostBody("application/json",'{"seq":'..requestSeq..',"assisted":false,"reward":'..deliveredReward..',"obs":['..table.concat(obs,",")..'],"legal":['..table.concat(legal,",")..']}')
+  local deliveredRound=roundEnded;roundEnded=false
+  req:SetHTTPRequestRawPostBody("application/json",'{"seq":'..requestSeq..',"dt":'..dt..',"round_end":'..tostring(deliveredRound)..',"assisted":false,"reward":'..deliveredReward..',"obs":['..table.concat(obs,",")..'],"legal":['..table.concat(legal,",")..']}')
   req:SetHTTPRequestAbsoluteTimeoutMS(1500)
   req:Send(function(response)
     if epoch~=generation then return end
@@ -165,8 +219,8 @@ function FlyThink()
     if not running or Time()-sent>1.5 or not h:IsAlive() or response.StatusCode~=200 then h:Stop(); return end
     local s,a=string.match(response.Body or "", "^(%d+)|(%d+)$")
     a=tonumber(a)
-    if tonumber(s)~=requestSeq or not a or a>24 or legal[a+1]~=1 then return end
-    if a>=14 then playerActions.apply(h,a);return end
+    if tonumber(s)~=requestSeq or not a or a>25 or legal[a+1]~=1 then return end
+    if a>=14 and a<=24 then playerActions.apply(h,a);return end
     local order={UnitIndex=h:entindex(),Queue=false}
     if a>=1 and a<=8 then
       local d=directions[a]; local p=h:GetAbsOrigin()
@@ -175,7 +229,7 @@ function FlyThink()
       if not target or target:IsNull() or not target:IsAlive() or not h:CanEntityBeSeenByMyTeam(target) then return end
       order.OrderType=DOTA_UNIT_ORDER_ATTACK_TARGET; order.TargetIndex=target:entindex()
     elseif a>=10 then
-        local ability=h:FindAbilityByName(names[a-9])
+        local ability=h:FindAbilityByName(a==25 and "nevermore_frenzy" or names[a-9])
         if not ability or not ability:IsFullyCastable() then return end
         order.AbilityIndex=ability:entindex()
         order.OrderType=DOTA_UNIT_ORDER_CAST_NO_TARGET
@@ -184,9 +238,9 @@ function FlyThink()
       return
     end
     ExecuteOrderFromTable(order)
-    local labels={[1]="Move east",[2]="Move northeast",[3]="Move north",[4]="Move northwest",[5]="Move west",[6]="Move southwest",[7]="Move south",[8]="Move southeast",[9]="Attack",[10]="Near raze",[11]="Medium raze",[12]="Far raze",[13]="Requiem"}
+    local labels={[1]="Move east",[2]="Move northeast",[3]="Move north",[4]="Move northwest",[5]="Move west",[6]="Move southwest",[7]="Move south",[8]="Move southeast",[9]="Attack",[10]="Near raze",[11]="Medium raze",[12]="Far raze",[13]="Requiem",[25]="Frenzy (R)"}
     CustomGameEventManager:Send_ServerToPlayer(PlayerResource:GetPlayer(0),"fly_status",{entity=h:entindex(),status="Full connectome â€” policy status in dashboard",action=labels[a],seq=requestSeq})
     print("FLY_ORDER",requestSeq,a,h:GetAbsOrigin().x,h:GetAbsOrigin().y)
   end)
-  return 1.0 -- Match the replay label window; give attacks time to launch.
+  return decisionInterval
 end

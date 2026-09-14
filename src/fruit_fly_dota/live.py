@@ -10,7 +10,7 @@ from .full_neural import FullReservoir
 from .reinforcement import RewardLearner
 
 OBS_SIZE = 33
-ACTION_COUNT = 25  # combat 0..13; upgrade 14..17; buy 18..24
+ACTION_COUNT = 26  # combat 0..13; upgrade 14..17; buy 18..24; Frenzy 25
 
 def validate(payload):
     if not isinstance(payload, dict): raise ValueError("Expected object")
@@ -32,6 +32,9 @@ class Controller:
         self.decoder[-1] = 0  # No constant action preference independent of graph.
         self.last_seq = -1
         self.latest = None
+        self.rounds = 0
+        self.round_reward = 0.
+        self.history = []
         self.self_fields=None
         self.policy_name='full-observation-RL-from-scratch' if learn else 'untrained-full-connectome'
         self.learner=RewardLearner(reservoir.feature_size,ACTION_COUNT) if learn else None
@@ -46,6 +49,9 @@ class Controller:
     def step(self, payload):
         seq, obs, legal = validate(payload)
         reward=payload.get('reward',0)
+        dt=payload.get('dt',1.)
+        if type(dt) not in (int,float) or not np.isfinite(dt) or not 0<dt<=10:raise ValueError('Invalid elapsed time')
+        if type(payload.get('round_end',False)) is not bool:raise ValueError('Invalid round boundary')
         assisted=payload.get('assisted',False)
         if type(assisted) is not bool or assisted:raise ValueError('Script-assisted sessions are disabled')
         if type(reward) not in (int,float) or not np.isfinite(reward) or abs(reward)>20:raise ValueError('Invalid reward')
@@ -54,6 +60,14 @@ class Controller:
             if self.learner:self.learner.reset_episode()
         if seq <= self.last_seq: raise ValueError("Stale sequence")
         if self.learner:self.learner.feedback(reward)
+        self.round_reward += reward
+        if payload.get('round_end', False):
+            self.rounds += 1
+            self.history.append(dict(round=self.rounds,reward=self.round_reward))
+            self.history=self.history[-100:]
+            self.round_reward=0.
+            self.reservoir.reset()
+            if self.learner:self.learner.reset_episode()
         started = time.perf_counter()
         neural_obs=obs.copy()
         if self.self_fields is not None:
@@ -65,7 +79,7 @@ class Controller:
         logits[~legal] = -np.inf
         p = np.exp(logits - logits.max()); p /= p.sum()
         action = int(self.rng.choice(ACTION_COUNT, p=p)) if self.self_fields is None or self.learner else int(np.argmax(logits))
-        if self.learner:self.learner.record(features,p,action)
+        if self.learner:self.learner.record(features,p,action,elapsed=dt)
         self.last_seq = seq
         result = dict(seq=seq, action=action, obs=obs.tolist(), legal=legal.astype(int).tolist(),
                     feature_norm=float(np.linalg.norm(features[:-1])),
@@ -75,12 +89,27 @@ class Controller:
                     learning_updates=self.learner.updates if self.learner else 0,
                     learning='reward-modulated engineered readout' if self.learner else 'disabled')
         result['assisted']=assisted
+        result['dt']=dt
+        result['rounds']=self.rounds
+        result['round_reward']=self.round_reward
+        result['recent_rounds']=self.history[-10:]
         result['control_mode']='SCRIPT-ASSISTED: route, attack-move, retreat, shop, levels' if assisted else 'neural actions with legality mask'
         sample=np.linspace(0,self.reservoir.n-1,min(240,self.reservoir.n),dtype=int)
         self.latest=dict(**result, neurons=self.reservoir.n,
                          sampled_indices=sample.tolist(),activity=self.reservoir.state[sample].tolist(),
                          motor_pools=features[:-1].tolist(),probabilities=p.tolist())
         return result
+
+def save_learning(controller, path):
+    """Atomic checkpoint: an interrupted write leaves the previous save readable."""
+    if not controller.learner:return
+    path=Path(path); temporary=path.with_suffix('.tmp')
+    with temporary.open('wb') as f:
+        np.savez_compressed(f,weights=controller.learner.weights,
+            decoder=controller.decoder,input_size=OBS_SIZE,action_count=ACTION_COUNT,
+            total_reward=controller.learner.total_reward,updates=controller.learner.updates,
+            rounds=controller.rounds)
+    temporary.replace(path)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -100,6 +129,8 @@ def main():
             controller.learner.weights[:]=weights
             controller.learner.total_reward=float(saved['total_reward'])
             controller.learner.updates=int(saved['updates'])
+            if 'decoder' in saved:controller.decoder[:]=saved['decoder']
+            if 'rounds' in saved:controller.rounds=int(saved['rounds'])
     logpath = Path(args.log); logpath.parent.mkdir(parents=True, exist_ok=True)
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
@@ -123,8 +154,7 @@ def main():
                 self.send_error(400); return
             with logpath.open("a", encoding="utf-8") as f: f.write(json.dumps(result)+"\n")
             if controller.learner and result['seq']%25==0:
-                np.savez_compressed(logpath.with_suffix('.learning.npz'),weights=controller.learner.weights,
-                                    total_reward=controller.learner.total_reward,updates=controller.learner.updates)
+                save_learning(controller,logpath.with_suffix('.learning.npz'))
             body = f'{result["seq"]}|{result["action"]}'.encode()
             self.send_response(200); self.send_header("Content-Type", "text/plain")
             self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
@@ -137,7 +167,6 @@ def main():
     finally:
         server.server_close()
         if controller.learner:
-            np.savez_compressed(logpath.with_suffix('.learning.npz'),weights=controller.learner.weights,
-                                total_reward=controller.learner.total_reward,updates=controller.learner.updates)
+            save_learning(controller,logpath.with_suffix('.learning.npz'))
 
 if __name__ == "__main__": main()
