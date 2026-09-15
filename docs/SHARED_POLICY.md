@@ -1,5 +1,12 @@
 # Shared recurrent self-play
 
+**Run-Fruit-Fly.cmd** is the simple menu: start 5v5, start lane practice, open the
+dashboard, or check training/saves. Close Dota before starting a new game, keep
+Steam signed in, and leave the computer awake. Closing the menu does not stop
+training. Close Dota to stop game experience; the trainer waits for the next launch.
+The desktop launcher on the configured PC opens this menu. It depends on this
+repository and its installed environment; it is not a portable standalone executable.
+
 Run **Start-SelfPlay.cmd** for local 5v5, or **Start-Training.cmd** for lane practice.
 If Dota is already open, load the fruit_fly_dota addon once. Watch
 http://127.0.0.1:8765/ and select player 0–9. `fly_camera_follow 0` follows SF;
