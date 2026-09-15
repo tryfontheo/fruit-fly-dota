@@ -1,3 +1,5 @@
+> Historical v3 instructions. See [SHARED_POLICY.md](SHARED_POLICY.md) for the current shared GRU/PPO mode.
+
 # Unassisted decision learning
 
 For current standalone operation, use [autonomous practice](AUTONOMOUS.md). The reward design and passive economy are documented in [REWARDS.md](REWARDS.md).

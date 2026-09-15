@@ -76,7 +76,7 @@ def test_atomic_checkpoint_contains_action_schema(tmp_path):
     c=Controller(brain,learn=True);c.step(payload(0))
     path=tmp_path/'test.npz';save_learning(c,path)
     with np.load(path,allow_pickle=False) as saved:
-        assert int(saved['action_count'])==26
+        assert int(saved['action_count'])==ACTION_COUNT
         np.testing.assert_array_equal(saved['decoder'],c.decoder)
     assert not path.with_suffix('.tmp').exists()
 
@@ -116,3 +116,30 @@ def test_passive_income_uses_game_time_not_decision_count():
     assert amount==1
     previous,amount=economy.advance(previous,0)
     assert previous==0 and amount==0
+
+def test_xp_reward_pays_only_new_experience():
+    from pathlib import Path
+    from lupa import LuaRuntime
+    rules=LuaRuntime(unpack_returned_tuples=True).execute(Path('dota/live/scripts/vscripts/reward_rules.lua').read_text())
+    mark,r=rules.experience(None,300);assert r==0
+    mark,r=rules.experience(mark,400);assert r==pytest.approx(.1)
+    mark,r=rules.experience(mark,400);assert r==0
+    mark,r=rules.experience(mark,0);assert r==0
+    mark,r=rules.experience(mark,400);assert r==0
+    mark,r=rules.experience(mark,500);assert r==pytest.approx(.1)
+
+def test_extended_inputs_preserve_old_neural_features_when_zero():
+    w=csr_matrix(([1.],([1],[0])),shape=(2,2))
+    old=FullReservoir(w,[0],[1],input_size=33,pools=1)
+    new=FullReservoir(w,[0],[1],input_size=46,pools=1,legacy_input_size=33)
+    np.testing.assert_array_equal(old.features(np.ones(33)),new.features(np.r_[np.ones(33),np.zeros(13)]))
+
+def test_guide_completion_cannot_be_farmed_by_rebuying():
+    from pathlib import Path
+    from lupa import LuaRuntime
+    lua=LuaRuntime();guide=lua.execute(Path('dota/live/scripts/vscripts/guide_items.lua').read_text())
+    seen=lua.table()
+    assert guide.claim(seen,'item_power_treads')==pytest.approx(.2)
+    assert guide.claim(seen,'item_power_treads')==0
+    assert guide.claim(seen,'item_boots')==0
+    assert guide.claim(seen,'item_mask_of_madness')==pytest.approx(.2)

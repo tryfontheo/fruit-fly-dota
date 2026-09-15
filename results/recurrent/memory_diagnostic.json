@@ -1,0 +1,6 @@
+{
+  "task": "Synthetic cue followed by seven blank observations; not Dota",
+  "accuracy": 1.0,
+  "reset_memory_accuracy": 0.484375,
+  "passes": true
+}

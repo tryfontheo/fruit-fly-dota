@@ -1,4 +1,9 @@
-# Independent local training
+# Current standalone training
+
+Read [SHARED_POLICY.md](SHARED_POLICY.md) for current launchers, saves, expanded
+actions, five-minute practice and local 5v5. The v3 instructions below are historical.
+
+# Historical independent local training
 
 Double-click **Start-Training.cmd** to install the project addon, start the local neural learner and launch Dota into automatic practice without Codex. If Dota is already open, load the project addon once; the launcher does not interrupt another game. It checks for an existing controller, saves every 25 decisions using atomic replacement, restores its own v3 checkpoint on restart, and restarts a failed worker after five seconds. Files are under `work/autonomous-v3*`; keep these files to retain learning. The computer must stay awake. This does not automatically recover Dota crashes; run the launcher again if the game closes.
 
@@ -14,7 +19,7 @@ Rewards include last hits, kills, objectives, deaths and damage taken (tower dam
 
 The v3 26-action schema starts a separate checkpoint because the previous 25-action decoder is incompatible. Previous files are preserved. Pro replay imitation checkpoints remain separate and have not been retrained for this vocabulary. No public/ranked matchmaking is used.
 
-## Local verification — September 13, 2026
+## Local verification ï¿½ September 13, 2026
 
 26 tests passed. Real Dota automatically started SF, spawned practice enemies, issued neural movement/attack/upgrade orders, applied damage/death feedback, and completed an automatic reset after death. At the first reset the learner had 58 reward updates and cumulative reward -5.6654; negative return is not successful play. Killing only the project learner worker demonstrated supervisor restart and recovery of the saved 58 updates and round count. Observed throughput was about 5 decisions/second at a requested 10 Hz. Frenzy is wired and compiled but an actual Frenzy cast was not observed in this initial run.
 

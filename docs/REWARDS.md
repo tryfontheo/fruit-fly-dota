@@ -20,7 +20,7 @@ These are experimental, engineered teaching signals. Positive reward strengthens
 
 Damage rewards depend on reported damage after mitigation and are capped by a per-unit fractional budget. They do not exactly reconstruct pre-hit HP, so overkill attribution can be imperfect. Budgets use weak entity-handle keys and persist across round resets; cleanup creates no kill reward. Damage to one's own team is not rewarded. Reward components are logged separately from their clamped scalar sum; transport reward remains clipped to [-20,20].
 
-Passive gold is granted by an explicit game-clock timer through `PlayerResource:ModifyGold` at **1 gold / 0.6 seconds = 100 GPM**, a reproducible practice setting rather than a claim of exact current ranked economy parity. It awards no learning reward. API reference: [ModDota's generated server API](https://docs.moddota.com/lua_server/) (`SetGoldPerTick`, `SetGoldTickTime`). Previously observed gold stayed at 600 over 111 seconds. Explicit native tick settings also failed to credit income in a subsequent live test. Native ticks are therefore disabled, preventing double payment; the fallback timer pays all valid player IDs 0–23, runs independently of the neural action rate, and does not advance during paused game time.
+Passive gold is granted by an explicit game-clock timer through `PlayerResource:ModifyGold` at **1 gold / 0.6 seconds = 100 GPM**, a reproducible practice setting rather than a claim of exact current ranked economy parity. It awards no learning reward. API reference: [ModDota's generated server API](https://docs.moddota.com/lua_server/) (`SetGoldPerTick`, `SetGoldTickTime`). Previously observed gold stayed at 600 over 111 seconds. Explicit native tick settings also failed to credit income in a subsequent live test. Native ticks are therefore disabled, preventing double payment; the fallback timer pays all valid player IDs 0ï¿½23, runs independently of the neural action rate, and does not advance during paused game time.
 
 ## Candidate signals for a fuller player â€” not enabled yet
 
@@ -50,3 +50,27 @@ The prior adapter is retained, with a local backup `work/before-lane-v2.learning
 ## Live verification
 
 29 tests passed, including regeneration reward caps, last-hit/damage scale, reward component validation and game-clock gold accrual without duplicate payments. In the corrected live game, SF gold rose from 602 at game time 2.0 to 619 at 12.0 seconds. Logged feedback includes a real creep-damage reward (+0.00836) and enemy-damage penalties; a new-rule last hit has not yet been observed. This validates plumbing, not improved policy performance.
+
+## lane-v3: XP and rune activation
+
+Actual increases in cumulative hero XP earn +0.001 per XP (+0.10 per 100 XP). Initial XP and repeatedly observing unchanged XP pay nothing. A high-water mark prevents repayment after downward resets. No additional level-up bonus is applied. This is deliberately much smaller than last-hit credit.
+
+A real `dota_rune_activated_server` event for SF's player earns +0.20, with same-type duplicate events within one second suppressed. This rewards activation, not both bottling and activation. The current neural vocabulary has no explicit rune pickup action or rune observations yet; this hook alone does not establish autonomous rune collection. Event fields come from [ModDota's generated declarations](https://github.com/ModDota/TypeScriptDeclarations/blob/master/packages/dota-lua-types/types/events.generated.d.ts).
+
+## Shared-v5 additions
+
+Power Treads, Mask of Madness, Dragon Lance, BKB, Silver Edge, Satanic, Daedalus
+and Butterfly each pay +0.20 once per match. Components and repeat purchases do
+not repay it. This is human build knowledge; compare a no-guide-reward ablation.
+Activation itself pays nothing. Rune pickup/observations, talents and TP are now
+available actions, though successful autonomous use is not yet verified.
+
+Jungle creeps receive the same capped +0.10 damage and +1 last-hit reward as lane
+creeps. Actual raze casts with no attributed damage within 0.8 seconds cost -0.05;
+Requiem uses four seconds and -0.20. This may discourage useful zoning/fear.
+
+Actual winners receive +100, losers -100; timeout draws get zero outcome bonus.
+Shared transport clips to [-200,200]; PPO scales all reward by 0.1 internally.
+These are learning rewards, not extra game XP. A finite win bonus does not ensure
+it dominates unlimited farming rewards: evaluate wins. End-to-end full-game
+terminal credit/restart and all new action effects still need live verification.

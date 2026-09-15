@@ -9,8 +9,8 @@ from .malecns import load_full
 from .full_neural import FullReservoir
 from .reinforcement import RewardLearner
 
-OBS_SIZE = 33
-ACTION_COUNT = 26  # combat 0..13; upgrade 14..17; buy 18..24; Frenzy 25
+OBS_SIZE = 46
+ACTION_COUNT = 39  # Previous 26 actions; eight guide purchases and five item activations
 
 def validate(payload):
     if not isinstance(payload, dict): raise ValueError("Expected object")
@@ -51,10 +51,10 @@ class Controller:
         reward=payload.get('reward',0)
         components=payload.get('reward_components',{})
         version=payload.get('reward_version','legacy')
-        if version not in ('legacy','lane-v2'):raise ValueError('Unknown reward version')
-        if not isinstance(components,dict) or len(components)>12:raise ValueError('Invalid reward components')
+        if version not in ('legacy','lane-v2','lane-v3'):raise ValueError('Unknown reward version')
+        if not isinstance(components,dict) or len(components)>13:raise ValueError('Invalid reward components')
         for name,value in components.items():
-            if name not in ('death','hero_kill','building_kill','last_hit','deny','tower_damage_taken','damage_taken','building_damage','creep_damage','hero_damage'):raise ValueError('Unknown reward component')
+            if name not in ('death','hero_kill','building_kill','last_hit','deny','tower_damage_taken','damage_taken','building_damage','creep_damage','hero_damage','experience','rune_activation','guide_item'):raise ValueError('Unknown reward component')
             if type(value) not in (int,float) or not np.isfinite(value) or abs(value)>10000:raise ValueError('Invalid reward component')
         dt=payload.get('dt',1.)
         if type(dt) not in (int,float) or not np.isfinite(dt) or not 0<dt<=10:raise ValueError('Invalid elapsed time')
@@ -129,7 +129,7 @@ def main():
     parser.add_argument('--resume-learning',help='Resume an experimental readout adapter checkpoint')
     args = parser.parse_args()
     w, sensory, motor, manifest = load_full()
-    controller = Controller(FullReservoir(w, sensory, motor, input_size=OBS_SIZE),policy=args.policy,learn=args.learn)
+    controller = Controller(FullReservoir(w, sensory, motor, input_size=OBS_SIZE,legacy_input_size=33),policy=args.policy,learn=args.learn)
     if args.resume_learning:
         if not controller.learner:raise ValueError('--resume-learning requires --learn')
         with np.load(args.resume_learning,allow_pickle=False) as saved:
@@ -143,7 +143,7 @@ def main():
     logpath = Path(args.log); logpath.parent.mkdir(parents=True, exist_ok=True)
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
-            if self.path == '/state':
+            if self.path == '/state' or self.path.startswith('/state?'):
                 body=json.dumps(controller.latest or dict(status='Waiting for real Dota observations')).encode()
                 mime='application/json'
             elif self.path == '/':

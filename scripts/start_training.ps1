@@ -14,8 +14,7 @@ if (!$Worker) {
 }
 # This supervisor belongs to this project; no Codex service or account is needed.
 while (!(Test-Path (Join-Path $work 'stop-training'))) {
-  $arguments=@('-m','fruit_fly_dota.live','--learn','--log','work/autonomous-v3.jsonl')
-  if(Test-Path 'work/autonomous-v3.learning.npz'){$arguments+=@('--resume-learning','work/autonomous-v3.learning.npz')}
+  $arguments=@('-m','fruit_fly_dota.shared')
   $ErrorActionPreference='Continue'
   & $python @arguments >> (Join-Path $work 'trainer.log') 2>&1
   $workerExit=$LASTEXITCODE

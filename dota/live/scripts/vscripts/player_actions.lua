@@ -2,7 +2,8 @@
 local M={skills={"nevermore_shadowraze1","nevermore_dark_lord","nevermore_frenzy","nevermore_requiem"},
 items={"item_boots","item_gloves","item_boots_of_elves","item_lifesteal","item_broadsword","item_blade_of_alacrity","item_recipe_yasha"}}
 function M.can_buy(h,name)
-  if (h:GetAbsOrigin()-Vector(-6700,-6700,0)):Length2D()>1100 then return false end
+  local spawn=Entities:FindByClassname(nil,h:GetTeamNumber()==DOTA_TEAM_GOODGUYS and "info_player_start_goodguys" or "info_player_start_badguys")
+  if not spawn or (h:GetAbsOrigin()-spawn:GetAbsOrigin()):Length2D()>1100 then return false end
   local free=false
   for i=0,5 do if not h:GetItemInSlot(i) then free=true end end
   return free and GetItemCost(name)>0 and h:GetGold()>=GetItemCost(name)

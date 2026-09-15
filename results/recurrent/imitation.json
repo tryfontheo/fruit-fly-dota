@@ -1,0 +1,129 @@
+{
+  "schema": "shared-v5-74x54",
+  "provenance": [
+    {
+      "match": 8996973546,
+      "player": "423",
+      "split": "train",
+      "samples": 600,
+      "sha256": "8e42badc36fdcacbe41071046af8e7fa53cc6523f0bcd7fdef39a4beee75acdb"
+    },
+    {
+      "match": 8996904414,
+      "player": "jikroy",
+      "split": "train",
+      "samples": 600,
+      "sha256": "332147701c69bde9b88adb895490b8dfccd8f295e2f922dff1fabf988890df16"
+    },
+    {
+      "match": 8996322528,
+      "player": "Straight Edge",
+      "split": "train",
+      "samples": 600,
+      "sha256": "961ca7cc28d66df756f5c61a06014ab397431e34f6a7ad0dcedcfa166cbc4859"
+    },
+    {
+      "match": 8996209200,
+      "player": "Lumi\u00e8re",
+      "split": "validation",
+      "samples": 600,
+      "sha256": "e03ff68d93a4cb6f8fbd4f7ec4eb9c472979a54ae25d8f696f84a053e9175cab"
+    },
+    {
+      "match": 8994936160,
+      "player": "Timado",
+      "split": "test",
+      "samples": 600,
+      "sha256": "d5a9ab6dd9d2e3cd1d2a5f3beb2723291817cb6083cd1530ee43f3559ab2b9ad"
+    }
+  ],
+  "loss": [
+    2.621646856006823,
+    2.545344909032186,
+    2.3906553523582326,
+    2.3494296073913574,
+    2.3164036504009315,
+    2.3024106674027025,
+    2.289573868115743,
+    2.276153010234498,
+    2.2613026970311214,
+    2.2441326066067346,
+    2.224219692380805,
+    2.202427071437501,
+    2.180899007278576,
+    2.1617357877262853,
+    2.1459533603567826,
+    2.13340397466693,
+    2.1231287393653604,
+    2.1139581569454124,
+    2.1053313226030586,
+    2.097326373844816,
+    2.090024103198135,
+    2.0833579280920196,
+    2.0770960178291586,
+    2.07102132052706,
+    2.065052481074082,
+    2.0592032618689955,
+    2.0535051592609337,
+    2.0479783739959982,
+    2.042633400151604,
+    2.037477455641094
+  ],
+  "metrics": {
+    "train": {
+      "samples": 1800,
+      "majority_accuracy": 0.2338888888888889,
+      "normal": {
+        "accuracy": 0.36333333333333334,
+        "balanced_accuracy": 0.17743834144034823
+      },
+      "no_memory": {
+        "accuracy": 0.3338888888888889,
+        "balanced_accuracy": 0.17024819134038424
+      },
+      "zero_graph": {
+        "accuracy": 0.2338888888888889,
+        "balanced_accuracy": 0.07692307692307693
+      }
+    },
+    "validation": {
+      "samples": 600,
+      "majority_accuracy": 0.22666666666666666,
+      "normal": {
+        "accuracy": 0.2866666666666667,
+        "balanced_accuracy": 0.10985446985446987
+      },
+      "no_memory": {
+        "accuracy": 0.235,
+        "balanced_accuracy": 0.09909079596386097
+      },
+      "zero_graph": {
+        "accuracy": 0.22666666666666666,
+        "balanced_accuracy": 0.07692307692307693
+      }
+    },
+    "test": {
+      "samples": 600,
+      "majority_accuracy": 0.215,
+      "normal": {
+        "accuracy": 0.28833333333333333,
+        "balanced_accuracy": 0.14971869595672607
+      },
+      "no_memory": {
+        "accuracy": 0.30333333333333334,
+        "balanced_accuracy": 0.1493898258604141
+      },
+      "zero_graph": {
+        "accuracy": 0.215,
+        "balanced_accuracy": 0.07692307692307693
+      }
+    }
+  },
+  "limitations": [
+    "Own position, HP, mana and level only; other observations are missing and zero-filled",
+    "Movement inferred from displacement; attacks inferred from damage; spells from actual events",
+    "First contiguous-time 600 eligible samples per match; gaps reset recurrent states",
+    "No claim of learned rune, item, fog or full-game strategy",
+    "Evaluation masks to the 14 supported activity labels; not full action-space gameplay accuracy"
+  ]
+}

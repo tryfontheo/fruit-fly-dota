@@ -1,4 +1,12 @@
-# Autonomous local practice
+# Current: shared recurrent self-play
+
+**Start-SelfPlay.cmd** launches local 5v5; **Start-Training.cmd** starts lane practice.
+The 176,422-neuron graph feeds an engineered GRU trained by pooled PPO, with a
+small pro-replay warm start. It is still a weak prototype. Read the
+[current guide](docs/SHARED_POLICY.md). Older commands/schemas below are historical;
+the current addon requires `python -m fruit_fly_dota.shared`.
+
+# Historical autonomous local practice
 
 See [the standalone training guide](docs/AUTONOMOUS.md) for automatic saving, repeated practice rounds, faster decisions and Frenzy (R).
 

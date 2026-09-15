@@ -1,0 +1,26 @@
+{
+  "schema": "shared-v5-74x54",
+  "observed_at": "2026-09-14T22:04:38.9938966-04:00",
+  "active_agents": 10,
+  "policy_version": 18,
+  "ppo": {
+    "loss": -0.019955915088454883,
+    "parameter_change": 0.07919922471046448,
+    "samples": 256,
+    "streams": 10
+  },
+  "neurons": 176422,
+  "roster": "Observed player IDs 0-4 on team 2; 5-9 on team 3",
+  "verified": [
+    "Live game orders",
+    "Skill upgrades after correcting handle API",
+    "Shared policy weight updates",
+    "Checkpoint save and supervisor recovery"
+  ],
+  "not_verified": [
+    "Improved Dota competence",
+    "Full-game victory and automatic reload",
+    "Every item/rune/talent effect",
+    "Multiple parallel Dota processes"
+  ]
+}
