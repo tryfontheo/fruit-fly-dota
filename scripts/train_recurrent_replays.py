@@ -11,7 +11,7 @@ from fruit_fly_dota.malecns import load_full
 from fruit_fly_dota.train_sf import examples
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--from-cache',action='store_true');p.add_argument('--per-match',type=int,default=600);p.add_argument('--epochs',type=int,default=15);p.add_argument('--output',default='work/shared-v5.pt');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--from-cache',action='store_true');p.add_argument('--per-match',type=int,default=600);p.add_argument('--epochs',type=int,default=15);p.add_argument('--output',default='work/shared-v6.pt');a=p.parse_args()
     out=Path(a.output)
     if out.exists():raise ValueError('Refusing to overwrite an existing recurrent policy')
     cache=Path('work/recurrent-pro-features.npz');manifest=json.loads(Path('data/replays/sf_manifest.json').read_text());data=[];provenance=[]

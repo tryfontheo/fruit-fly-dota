@@ -6,15 +6,15 @@ http://127.0.0.1:8765/ and select player 0–9. `fly_camera_follow 0` follows SF
 `fly_camera_free` releases the camera; `fly_stop` stops all agents.
 
 Training runs locally without Codex credits or messages. It saves atomically every
-100 decisions and at terminal results to `work/shared-v5.pt`, restoring weights
-and optimizer on restart. Keep that file. Logs are `work/shared-v5.jsonl` and
+100 decisions and at terminal results to `work/shared-v6.pt`, restoring weights
+and optimizer on restart. Keep that file. Logs are `work/shared-v6.jsonl` and
 `work/trainer.log`. The supervisor restarts failed Python workers after five
 seconds. Dota crashes require relaunching. Keep the computer awake. Temporary
 per-hero memory resets for new matches/processes; learned weights persist.
 
 ## Architecture
 
-74 structured observations → 176,422-neuron MaleCNS connectivity-derived rate
+78 structured observations → 176,422-neuron MaleCNS connectivity-derived rate
 dynamics → 64 motor features → engineered 64-unit GRU → 54 legal-masked actions.
 There is no raw-observation bypass. Anatomical weights remain fixed; GRU, actor
 and critic learn. This is not validated full-brain physiology or biological
@@ -37,13 +37,24 @@ CPU graph processing is serial: a requested 0.1-second interval does not guarant
 
 ## Actions and scaffolding
 
-54 choices cover wait, eight movement directions, four visible enemy target slots,
+54 action slots cover wait, eight movement directions, four visible enemy target slots,
 three razes, Frenzy (R), Requiem (Y), four skill upgrades, eight talents, seven
-component purchases, eight guide items, five item activations, visible rune pickup,
+disabled legacy component slots, eight guide items, five item activations, visible rune pickup,
 stop, TP purchase and TP to base. These are game orders, not physical key presses.
 
 Guide items: Power Treads, Mask of Madness, Dragon Lance, BKB, Silver Edge, Satanic,
 Daedalus and Butterfly. Activations: MoM, BKB, Silver Edge, Satanic and Treads toggle.
+V6 enforces the user's one-copy item constraint across inventory/backpack/stash.
+Loose component buying is disabled because the adapter purchases complete items
+without using them. These are explicit engineered shopping constraints, not
+learned item efficiency. The old v5 checkpoint remains preserved.
+
+V6 appends nearest allied lane-creep displacement, presence and team side, taken
+from allied minimap information. No enemy fog information or scripted navigation
+is supplied. Existing 74 encoder columns and the trained policy are preserved
+by `scripts/migrate_wave_checkpoint.py`; new input semantics still need learning.
+The signal identifies an allied creep, not guaranteed enemy contact or optimal farm.
+Providing it is not evidence of learned wave navigation.
 The paid custom shop buys complete items at full listed price near base; component
 assembly, courier delivery and inventory management are incomplete. There is no
 scripted route, retreat, build order or tactical item-use priority. Legal masks,

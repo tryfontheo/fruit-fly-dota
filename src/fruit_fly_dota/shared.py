@@ -64,7 +64,7 @@ class SharedController:
         return result
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--port',type=int,default=8765);p.add_argument('--checkpoint',default='work/shared-v5.pt');p.add_argument('--log',default='work/shared-v5.jsonl');p.add_argument('--evaluate',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--port',type=int,default=8765);p.add_argument('--checkpoint',default='work/shared-v6.pt');p.add_argument('--log',default='work/shared-v6.jsonl');p.add_argument('--evaluate',action='store_true');a=p.parse_args()
     w,s,m,manifest=load_full();brain=FullReservoir(w,s,m,input_size=OBS_SIZE,legacy_input_size=33)
     learner=SharedPPO(FEATURE_SIZE,ACTION_COUNT,learning=not a.evaluate)
     if Path(a.checkpoint).exists():learner.load(a.checkpoint,SCHEMA)

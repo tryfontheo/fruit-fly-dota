@@ -14,6 +14,7 @@ function render(s){const stale=!s.wall_time||Date.now()/1000-s.wall_time>2;
  if(s.seq!==feedbackSeq){feedbackSeq=s.seq;for(const [kind,value] of Object.entries(s.reward_components||{})){if(value)feedbackEvents.push(kind.replaceAll('_',' ')+': '+(value>0?'+':'')+Number(value).toFixed(3));}feedbackEvents=feedbackEvents.slice(-6);}
  document.querySelector('#feedback').textContent='Reward rules: '+(s.reward_version||'legacy')+' | Recent feedback: '+feedbackEvents.join(' · ');
  document.querySelector('#rounds').textContent='Recent round rewards: '+(s.recent_rounds||[]).map(r=>Number(r.reward).toFixed(2)).join(' · ')+' — changing hero levels; not proof of improved skill';
+ if(s.obs?.length===78)document.querySelector('#rounds').textContent='Allied lane creep: '+(s.obs[76]?'nearest is '+Math.round(Math.hypot(s.obs[74],s.obs[75])*16384)+' units away':'none currently observed')+' · Map information only; no automatic lane route.';
  if(!s.activity)return; document.querySelector('#neurons').textContent=s.neurons.toLocaleString()+' model neurons';
  document.querySelector('#latency').textContent=s.decision_ms.toFixed(1)+' ms / decision';document.querySelector('#tick').textContent='Decision '+s.seq;
  ctx.clearRect(0,0,700,400);s.activity.forEach((v,i)=>{const side=i%2?1:-1,t=i/240*2*Math.PI*7,r=30+115*((i*37)%240)/240,x=350+side*110+Math.cos(t)*r,y=200+Math.sin(t)*r;

@@ -15,6 +15,6 @@ try:
 except Exception as error:
     print('Trainer unavailable:',error)
     print('Run Start-SelfPlay.cmd or Start-Training.cmd to resume.')
-checkpoint=Path(__file__).resolve().parents[1]/'work/shared-v5.pt'
+checkpoint=Path(__file__).resolve().parents[1]/'work/shared-v6.pt'
 if checkpoint.exists():print('Checkpoint saved %.1f seconds ago'%(time.time()-checkpoint.stat().st_mtime))
 print('Updates confirm training runs; they do not prove improved game skill.')

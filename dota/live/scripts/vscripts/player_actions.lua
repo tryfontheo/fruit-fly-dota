@@ -2,6 +2,14 @@
 local M={skills={"nevermore_shadowraze1","nevermore_dark_lord","nevermore_frenzy","nevermore_requiem"},
 items={"item_boots","item_gloves","item_boots_of_elves","item_lifesteal","item_broadsword","item_blade_of_alacrity","item_recipe_yasha"}}
 function M.can_buy(h,name)
+  -- The current shop buys finished items outright; component assembly is absent.
+  -- Keep old action IDs but disable purchases that only clog this adapter's slots.
+  for _,component in ipairs(M.items) do if name==component then return false end end
+  -- Explicit user-requested one-copy constraint, including backpack/stash.
+  for slot=0,16 do
+    local item=h:GetItemInSlot(slot)
+    if item and item:GetAbilityName()==name then return false end
+  end
   local spawn=Entities:FindByClassname(nil,h:GetTeamNumber()==DOTA_TEAM_GOODGUYS and "info_player_start_goodguys" or "info_player_start_badguys")
   if not spawn or (h:GetAbsOrigin()-spawn:GetAbsOrigin()):Length2D()>1100 then return false end
   local free=false

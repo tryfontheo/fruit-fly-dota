@@ -54,7 +54,7 @@ local function sendTerminal()
   if pending then return end
   terminalSeq=terminalSeq or seq
   local obs,legal={},{}
-  for i=1,74 do obs[i]=0 end
+  for i=1,78 do obs[i]=0 end
   for i=1,54 do legal[i]=i==1 and 1 or 0 end
   local req=CreateHTTPRequestScriptVM("POST","http://127.0.0.1:8765/step")
   req:SetHTTPRequestRawPostBody("application/json",'{"env":"local","agent":"'..playerID..'","session":"'..session..'","seq":'..terminalSeq..',"terminal":true,"reward":'..terminalPending..',"dt":1,"obs":['..table.concat(obs,",")..'],"legal":['..table.concat(legal,",")..']}')
@@ -186,6 +186,7 @@ local function think()
   legal[26]=(frenzy and frenzy:GetLevel()>0 and frenzy:IsFullyCastable() and not h:IsSilenced()) and 1 or 0
   guideItems.observe(h,obs,legal,playerActions)
   local clickContext=interactions.context(h,units,obs,legal)
+  require("wave_observation").append(h,obs)
   local requestSeq=seq; seq=seq+1
   local dt=lastDecisionTime and math.min(60,math.max(.001,Time()-lastDecisionTime)) or decisionInterval
   lastDecisionTime=Time()

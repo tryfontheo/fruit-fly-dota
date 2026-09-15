@@ -18,8 +18,13 @@ class FullReservoir:
         self.encoder=rng.normal(0,1.5,(len(sensory),base_size)).astype(np.float32)
         self.bias=rng.normal(0,.5,len(sensory)).astype(np.float32)
         if base_size<input_size:
-            extra=np.random.default_rng(seed+1).normal(0,1.5,(len(sensory),input_size-base_size)).astype(np.float32)
+            # Preserve the v5 33+41 columns when appending minimap observations.
+            width=min(input_size-base_size,41) if base_size==33 else input_size-base_size
+            extra=np.random.default_rng(seed+1).normal(0,1.5,(len(sensory),width)).astype(np.float32)
             self.encoder=np.column_stack((self.encoder,extra))
+            if base_size+width<input_size:
+                appended=np.random.default_rng(seed+2).normal(0,1.5,(len(sensory),input_size-base_size-width)).astype(np.float32)
+                self.encoder=np.column_stack((self.encoder,appended))
         # Mean pools are fixed engineered decoding, not anatomical motor semantics.
         grouping=np.arange(len(motor))%pools
         sizes=np.bincount(grouping,minlength=pools)
