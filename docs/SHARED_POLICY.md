@@ -16,6 +16,11 @@ results separate from ordinary match evaluations. **Start-SelfPlay.cmd** retains
 normal base starts. The pre-curriculum local model is backed up as
 `work/before-lane-start-v6.pt`.
 
+Home TP is masked within 1,600 world units of its destination and rechecked
+immediately before execution, including mute/readiness. This is the user's
+requested anti-waste training constraint, not a learned judgment or an engine
+legality rule. Outside that radius the policy still chooses whether to TP.
+
 **Run-Fruit-Fly.cmd** is the simple menu: start 5v5, start lane practice, open the
 dashboard, or check training/saves. Close Dota before starting a new game, keep
 Steam signed in, and leave the computer awake. Closing the menu does not stop

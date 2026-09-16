@@ -1,5 +1,10 @@
 -- Extra click-equivalent game orders; never a tactical priority policy.
 local M={}
+-- User-requested training constraint, not a Dota engine legality rule.
+function M.can_tp_home(h,tp,base)
+  return tp~=nil and base~=nil and tp:IsFullyCastable() and not h:IsMuted()
+    and (base:GetAbsOrigin()-h:GetAbsOrigin()):Length2D()>1600
+end
 function M.context(h,units,obs,legal)
   local pos=h:GetAbsOrigin();local rune=nil;local distance=1600
   for _,candidate in ipairs(Entities:FindAllByClassname("dota_item_rune")) do
@@ -32,8 +37,8 @@ function M.context(h,units,obs,legal)
   for i=0,16 do local item=h:GetItemInSlot(i);if item and item:GetAbilityName()=="item_tpscroll" then tp=item;break end end
   local ready=tp and tp:IsFullyCastable() and not h:IsMuted()
   table.insert(obs,tp and 1 or 0);table.insert(obs,ready and 1 or 0)
-  table.insert(legal,ready and 1 or 0) -- 52
   local base=Entities:FindByClassname(nil,h:GetTeamNumber()==DOTA_TEAM_GOODGUYS and "info_player_start_goodguys" or "info_player_start_badguys")
+  table.insert(legal,M.can_tp_home(h,tp,base) and 1 or 0) -- 52
   table.insert(legal,base and (base:GetAbsOrigin()-pos):Length2D()<1100 and h:GetGold()>=GetItemCost("item_tpscroll") and not tp and 1 or 0)
   return {rune=rune,talents=talents,units=units,tp=tp,base=base}
 end
@@ -52,7 +57,7 @@ function M.apply(h,a,c)
     if not target or target:IsNull() or not target:IsAlive() or not h:CanEntityBeSeenByMyTeam(target) then return false end
     order.OrderType=DOTA_UNIT_ORDER_ATTACK_TARGET;order.TargetIndex=target:entindex()
   elseif a==52 then
-    if not c.tp or not c.base or not c.tp:IsFullyCastable() then return false end
+    if not M.can_tp_home(h,c.tp,c.base) then return false end
     order.OrderType=DOTA_UNIT_ORDER_CAST_POSITION;order.AbilityIndex=c.tp:entindex();order.Position=c.base:GetAbsOrigin()
   elseif a==53 then
     if not c.base or (c.base:GetAbsOrigin()-h:GetAbsOrigin()):Length2D()>1100 then return false end
