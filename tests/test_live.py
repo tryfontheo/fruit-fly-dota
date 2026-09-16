@@ -122,11 +122,11 @@ def test_xp_reward_pays_only_new_experience():
     from lupa import LuaRuntime
     rules=LuaRuntime(unpack_returned_tuples=True).execute(Path('dota/live/scripts/vscripts/reward_rules.lua').read_text())
     mark,r=rules.experience(None,300);assert r==0
-    mark,r=rules.experience(mark,400);assert r==pytest.approx(.1)
+    mark,r=rules.experience(mark,400);assert r==pytest.approx(.2)
     mark,r=rules.experience(mark,400);assert r==0
     mark,r=rules.experience(mark,0);assert r==0
     mark,r=rules.experience(mark,400);assert r==0
-    mark,r=rules.experience(mark,500);assert r==pytest.approx(.1)
+    mark,r=rules.experience(mark,500);assert r==pytest.approx(.2)
 
 def test_extended_inputs_preserve_old_neural_features_when_zero():
     w=csr_matrix(([1.],([1],[0])),shape=(2,2))

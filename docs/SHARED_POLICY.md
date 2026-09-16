@@ -23,11 +23,18 @@ across reward versions as if their meaning were unchanged.
 **Start-Fast-Training.cmd**, or option **5** in the desktop menu, starts 5v5 with
 a lane-placement curriculum. After 45 game seconds each living hero is placed
 400 units behind its team's most advanced living lane creep (distance from base).
+Candidates within an enemy living tower's attack range plus 300 units are rejected;
+if none qualify, placement waits. This is privileged reset generation, not a policy
+observation or learned tower avoidance.
 Unavailable/dead heroes wait until placement is possible. A hero with no new XP
 for 120 game seconds receives another placement. This avoids long unproductive
 stretches but does not demonstrate learned navigation. No health, levels,
 items or gold are granted. Subsequent actions and ordinary base respawns remain
 under the existing learner/game rules. Placement marks a recurrent episode boundary.
+For 30 game-seconds after each placement, TP-to-base is masked and rejected again
+at execution. In-flight decisions from before the placement are discarded.
+This explicit curriculum constraint prevents immediate reset-to-fountain loops;
+it is not learned retreat behavior and does not apply to ordinary self-play.
 This is engineered initial-state training, not learned navigation. It clusters
 heroes near waves and may overrepresent fights; compare base-start evaluations.
 It is intended to increase meaningful contacts, not a proven sample-efficiency gain.
@@ -42,14 +49,16 @@ requested anti-waste training constraint, not a learned judgment or an engine
 legality rule. Outside that radius the policy still chooses whether to TP.
 
 **Run-Fruit-Fly.cmd** is the simple menu: start 5v5, start lane practice, open the
-dashboard, or check training/saves. Close Dota before starting a new game, keep
+dashboard, check training/saves, or open VConsole2 with option 6. Selecting a mode
+automatically restarts an existing local fly match, keeping the trainer running.
+Close any unrelated Dota game first. Keep
 Steam signed in, and leave the computer awake. Closing the menu does not stop
 training. Close Dota to stop game experience; the trainer waits for the next launch.
 The desktop launcher on the configured PC opens this menu. It depends on this
 repository and its installed environment; it is not a portable standalone executable.
 
 Run **Start-SelfPlay.cmd** for local 5v5, or **Start-Training.cmd** for lane practice.
-If Dota is already open, load the fruit_fly_dota addon once. Watch
+The selected addon mode loads automatically. No console commands or file hunting are needed. Watch
 http://127.0.0.1:8765/ and select player 0–9. `fly_camera_follow 0` follows SF;
 `fly_camera_free` releases the camera; `fly_stop` stops all agents.
 
@@ -67,9 +76,22 @@ dynamics → 64 motor features → engineered 64-unit GRU → 54 legal-masked ac
 There is no raw-observation bypass. Anatomical weights remain fixed; GRU, actor
 and critic learn. This is not validated full-brain physiology or biological
 dopamine. Each hero has independent neural/GRU state; all share policy weights,
-not private fog observations. Recurrent PPO pools 256 transitions, uses 32-step
+not private fog observations. Recurrent PPO now pools 1,024 transitions, uses 32-step
 chunks and three epochs. Version checks reject stale transitions; failed orders
-discard that stream's short rollout to avoid crediting unexecuted choices.
+discard only the unacknowledged pending action. Earlier completed transitions
+are retained, with credit traces and recurrent chunks cut at the gap.
+The farming-v5 trial uses per-game-second discount 0.999 (previously 0.99)
+and GAE trace 0.99 (previously 0.95). Reward half-life is about 693 seconds
+instead of 69; this does not make a terminal win directly supervise every
+early decision. Value bootstrapping is still necessary across short rollouts.
+Checkpoint metadata records the settings used when saving; restarting uses
+the current code defaults, retaining weights, optimizer and random state.
+The pre-trial brain is backed up locally at `work/before-farming-v5.pt`.
+`scripts/report_learning.py` reports actual farming kills and XP, normalized
+for the reward-version change, plus healthy TP choices and base occupancy.
+TP choices are issued decisions, not proof that a teleport completed. Base
+occupancy is a fraction of observations, not a wall-clock occupancy measure.
+Compare frozen policies under identical curricula before claiming improvement.
 
 Training batches independent recurrent chunks instead of evaluating every example
 serially. A CPU comparison including one 256-sample update took 0.449 seconds

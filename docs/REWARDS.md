@@ -1,7 +1,9 @@
-# Current reward trial: lane-v4-exploration
+# Current reward trial: lane-v5-farming
 
 Damage taken now costs -0.5 per full HP equivalent, tower damage -1, and death
--1. Positive farming, XP, rune, item and spell rules remain as described below.
+-1. Last hits (lane or jungle) now earn +2 and each new XP earns +0.002.
+Damage budgets, rune, item and spell rules are unchanged. This doubles productive
+farming credit without rewarding fountain healing, motion or mere survival.
 This reduces the earlier survival penalties as an experimental response to
 fountain avoidance; improvement has not been established. See
 [current training setup and evidence](SHARED_POLICY.md). Old values below record

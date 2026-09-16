@@ -1,0 +1,201 @@
+[
+  {
+    "session": "756989440",
+    "decisions": 11967,
+    "approximate_near_either_base_fraction": 0.5872816913177906,
+    "reward_totals": {
+      "creep_damage": 4.04199457831837,
+      "missed_spell": -3.2999999999999963,
+      "damage_taken": -9.721561768429497,
+      "experience": 12.569000000000031,
+      "last_hit": 20,
+      "building_damage": 0.263466666666667,
+      "tower_damage_taken": -23.05010260278108,
+      "jungle_damage": 0.2776550393388615,
+      "death": -27,
+      "raze_damage": 0.2538262272904666,
+      "guide_item": 1.9999999999999998
+    },
+    "game_seconds_between_decisions_p95": 1.3000030517578,
+    "rejected_fraction": 0.009191944514080388,
+    "policy_updates": 350,
+    "game_minutes": 21.358889937400818,
+    "reward_versions": [
+      "lane-v4-exploration"
+    ],
+    "farm_kills": 20.0,
+    "xp_gained": 12569.0,
+    "death_feedback_packets": 27,
+    "farm_kills_per_hero_minute": 0.09363782508649332,
+    "tp_home_choices": 122,
+    "tp_home_choices_above_90_percent_hp": 103,
+    "most_common_actions": [
+      [
+        6,
+        2092
+      ],
+      [
+        8,
+        1585
+      ],
+      [
+        38,
+        1487
+      ],
+      [
+        4,
+        1344
+      ],
+      [
+        5,
+        918
+      ],
+      [
+        48,
+        864
+      ],
+      [
+        3,
+        766
+      ],
+      [
+        7,
+        605
+      ]
+    ]
+  },
+  {
+    "session": "182591542",
+    "decisions": 17103,
+    "approximate_near_either_base_fraction": 0.5647547213939075,
+    "reward_totals": {
+      "missed_spell": -5.399999999999989,
+      "creep_damage": 8.650762678203774,
+      "raze_damage": 0.297142838390278,
+      "experience": 20.013999999999918,
+      "last_hit": 74,
+      "tower_damage_taken": -37.40883786134405,
+      "building_damage": 0.6766000000000011,
+      "damage_taken": -11.486307036990263,
+      "jungle_damage": 0.47828694907425207,
+      "death": -45,
+      "guide_item": 3.0000000000000004,
+      "rune_activation": 0.4,
+      "ultimate_damage": 0.14906169594808
+    },
+    "game_seconds_between_decisions_p95": 1.2999877929688,
+    "rejected_fraction": 0.021224346605858622,
+    "policy_updates": 400,
+    "game_minutes": 30.007224082946777,
+    "reward_versions": [
+      "lane-v4-exploration",
+      "shared-v5"
+    ],
+    "farm_kills": 74.0,
+    "xp_gained": 20014.0,
+    "death_feedback_packets": 45,
+    "farm_kills_per_hero_minute": 0.24660728295108938,
+    "tp_home_choices": 196,
+    "tp_home_choices_above_90_percent_hp": 162,
+    "most_common_actions": [
+      [
+        4,
+        2329
+      ],
+      [
+        38,
+        2290
+      ],
+      [
+        8,
+        2000
+      ],
+      [
+        6,
+        1900
+      ],
+      [
+        3,
+        1639
+      ],
+      [
+        48,
+        1179
+      ],
+      [
+        5,
+        1144
+      ],
+      [
+        9,
+        1042
+      ]
+    ]
+  },
+  {
+    "session": "508474909",
+    "decisions": 7921,
+    "approximate_near_either_base_fraction": 0.49842191642469386,
+    "reward_totals": {
+      "missed_spell": -2.3499999999999996,
+      "creep_damage": 3.092784612603223,
+      "experience": 9.120000000000003,
+      "last_hit": 26,
+      "jungle_damage": 0.8179388333256797,
+      "damage_taken": -7.684038885095496,
+      "tower_damage_taken": -13.886046811343238,
+      "jungle_last_hit": 5,
+      "building_damage": 0.40444444444444466,
+      "death": -19,
+      "guide_item": 1.5999999999999999,
+      "raze_damage": 0.12991392150519301
+    },
+    "game_seconds_between_decisions_p95": 1.2999877929688,
+    "rejected_fraction": 0.020956949880065648,
+    "policy_updates": 420,
+    "game_minutes": 14.055556654930115,
+    "reward_versions": [
+      "lane-v4-exploration"
+    ],
+    "farm_kills": 31.0,
+    "xp_gained": 9120.0,
+    "death_feedback_packets": 19,
+    "farm_kills_per_hero_minute": 0.22055334243291222,
+    "tp_home_choices": 93,
+    "tp_home_choices_above_90_percent_hp": 78,
+    "most_common_actions": [
+      [
+        3,
+        1132
+      ],
+      [
+        4,
+        1034
+      ],
+      [
+        48,
+        1007
+      ],
+      [
+        8,
+        953
+      ],
+      [
+        6,
+        637
+      ],
+      [
+        5,
+        570
+      ],
+      [
+        9,
+        564
+      ],
+      [
+        7,
+        430
+      ]
+    ]
+  }
+]

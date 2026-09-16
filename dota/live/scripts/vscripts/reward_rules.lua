@@ -1,5 +1,5 @@
 -- Engineered training rewards, not biological dopamine concentrations.
-local M={version="lane-v4-exploration",last_hit=1,deny=.3,hero_kill=3,building_kill=5,death=-1,
+local M={version="lane-v5-farming",last_hit=2,deny=.3,hero_kill=3,building_kill=5,death=-1,
   damage_budgets={creep=.1,hero=.5,building=1}}
 function M.damage_taken(damage,max_health,tower)
   local fraction=math.min(1,math.max(0,tonumber(damage) or 0)/math.max(1,max_health))
@@ -18,6 +18,6 @@ end
 function M.experience(previous,current)
   if previous==nil then return current,0 end
   -- A high-water mark prevents repeated payment after a downward XP reset.
-  return math.max(previous,current),math.max(0,current-previous)*.001
+  return math.max(previous,current),math.max(0,current-previous)*.002
 end
 return M

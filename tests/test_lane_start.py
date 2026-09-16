@@ -21,3 +21,9 @@ def test_lane_start_uses_only_living_allied_creeps_and_stays_behind_front():
     g=lua.globals();base=g.Vector(0,0,0)
     assert module.position(g.hero,g.creeps,base)['x']==1600
     assert module.position(g.hero,lua.table(),base) is None
+    tower=g.creep(2000,3,True)
+    tower['Script_GetAttackRange']=lua.eval('function() return 700 end')
+    towers=lua.table(tower)
+    # Advanced creep would place the hero 400 from a tower; use safer rear wave.
+    assert module.position(g.hero,g.creeps,base,towers)['x']==600
+    assert module.position(g.hero,lua.table(g.creep(2000,2,True)),base,towers) is None

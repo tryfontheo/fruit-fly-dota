@@ -40,8 +40,8 @@ class SharedController:
         if seq<=state['seq']:raise ValueError('Stale sequence')
         if not applied:
             # A timed-out or rejected order is not an executed policy action.
-            # Discard this stream's short rollout so returns cannot cross the gap.
-            self.learner.pending.pop(key,None);self.learner.buffers.pop(key,None)
+            # Preserve completed transitions; cut the trace at the missing action.
+            self.learner.gap(key)
         started=time.perf_counter();brain=state['brain']
         features=brain.features(obs)[:-1]
         if boundary:

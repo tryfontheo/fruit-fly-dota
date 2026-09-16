@@ -1,7 +1,13 @@
 -- Extra click-equivalent game orders; never a tactical priority policy.
 local M={}
+-- Curriculum-only grace period; not a learned retreat decision.
+local laneGrace=setmetatable({}, {__mode="k"})
+function M.lane_placed(h)
+  laneGrace[h]=GameRules:GetDOTATime(false,false)+30
+end
 -- User-requested training constraint, not a Dota engine legality rule.
 function M.can_tp_home(h,tp,base)
+  if laneGrace[h] and GameRules:GetDOTATime(false,false)<laneGrace[h] then return false end
   return tp~=nil and base~=nil and tp:IsFullyCastable() and not h:IsMuted()
     and (base:GetAbsOrigin()-h:GetAbsOrigin()):Length2D()>1600
 end

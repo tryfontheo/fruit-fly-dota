@@ -241,7 +241,11 @@ local function think()
 end
 
 return {hero=hero,think=think,stop=stop,
-  boundary=function() roundEnded=true end,
+  boundary=function()
+    roundEnded=true
+    -- Invalidate in-flight decisions made before the curriculum relocation.
+    generation=generation+1;pending=false;previousApplied=false
+  end,
   match=function() training=false;running=true end,
   resume=function() running=true end,
   practice=function(seconds) running=true;training=true;roundSeconds=seconds or 300;roundDeadline=0 end,

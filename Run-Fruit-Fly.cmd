@@ -11,15 +11,18 @@ echo 2. Start lane practice - continue saved learning
 echo 3. Open brain and action dashboard
 echo 4. Check training and last save
 echo 5. Start faster practice - 5v5 with idle curriculum resets
+echo 6. Open VConsole2 - Dota command console
 echo Q. Close this menu - training keeps running
 echo.
-echo Before starting a new game, close Dota if it is already open.
+echo Selecting a mode restarts the local fly match automatically.
+echo If you have a different Dota game open, close that game first.
 echo Keep Steam signed in and your computer awake.
 echo Learning saves automatically. Closing this menu does not stop it.
 echo To stop playing, close Dota. Start again here next time.
 echo.
-choice /c 12345Q /n /m "Choose 1, 2, 3, 4, 5 or Q: "
-if errorlevel 6 exit /b
+choice /c 123456Q /n /m "Choose 1, 2, 3, 4, 5, 6 or Q: "
+if errorlevel 7 exit /b
+if errorlevel 6 goto console
 if errorlevel 5 goto fast
 if errorlevel 4 goto status
 if errorlevel 3 goto dashboard
@@ -42,7 +45,14 @@ goto menu
 :dashboard
 start "" "http://127.0.0.1:8765/"
 goto menu
+:console
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\open_vconsole.ps1"
+pause
+goto menu
 :status
 "%~dp0.venv\Scripts\python.exe" "%~dp0scripts\training_status.py"
+echo.
+echo Recent game outcomes - reward totals alone do not prove improvement:
+"%~dp0.venv\Scripts\python.exe" "%~dp0scripts\report_learning.py"
 pause
 goto menu

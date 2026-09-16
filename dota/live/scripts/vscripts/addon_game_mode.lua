@@ -114,9 +114,10 @@ function Activate()
         if not placed[id] then
           local h=a.hero
           local spawn=Entities:FindByClassname(nil,h:GetTeamNumber()==DOTA_TEAM_GOODGUYS and "info_player_start_goodguys" or "info_player_start_badguys")
-          local target=spawn and require("lane_start").position(h,creeps,spawn:GetAbsOrigin())
+          local target=spawn and require("lane_start").position(h,creeps,spawn:GetAbsOrigin(),Entities:FindAllByClassname("npc_dota_tower"))
           if target and h:IsAlive() then
             h:Stop();FindClearSpaceForUnit(h,target,true);a.boundary();placed[id]=true
+            require("interactions").lane_placed(h)
             print("FLY_LANE_START",id,target.x,target.y)
           else remaining=remaining+1 end
         end

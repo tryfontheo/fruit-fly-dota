@@ -27,13 +27,21 @@ class RecurrentPolicy(nn.Module):
         return Categorical(logits=logits),self.critic(h).squeeze(-1),h
 
 class SharedPPO:
-    def __init__(self,features,actions,hidden=64,rollout=256,seed=0,learning=True):
+    def __init__(self,features,actions,hidden=64,rollout=1024,seed=0,learning=True,gamma=.999,trace=.99):
         torch.manual_seed(seed)
         self.policy=RecurrentPolicy(features,actions,hidden)
         self.optimizer=torch.optim.Adam(self.policy.parameters(),lr=3e-4)
         self.rollout=rollout;self.learning=learning;self.version=0;self.samples=0
         self.buffers=defaultdict(list);self.states={};self.pending={}
         self.total_reward=0.;self.stats={};self.dropped_stale=0
+        self.gamma=gamma;self.trace=trace;self.gaps=0
+    def gap(self,key):
+        # Keep already acknowledged experience, but never propagate credit
+        # or recurrent gradients across a missing/rejected action.
+        self.pending.pop(key,None)
+        rows=self.buffers.get(key)
+        if rows:rows[-1]['trace_end']=True
+        self.gaps+=1
     def reset(self,key):
         self.states.pop(key,None);self.pending.pop(key,None)
         self.buffers.pop(key,None)
@@ -65,11 +73,16 @@ class SharedPPO:
         for rows in self.buffers.values():
             gae=0.
             for row in reversed(rows):
-                discount=.99**row['elapsed'];trace=.95**row['elapsed'];alive=not row['done']
+                discount=self.gamma**row['elapsed'];trace=self.trace**row['elapsed'];alive=not (row['done'] or row.get('trace_end',False))
                 delta=row['reward']+discount*row['next_value']-row['value']
                 gae=delta+discount*trace*alive*gae
                 row['adv']=gae;row['return']=gae+row['value'];advantages.append(gae)
-            for start in range(0,len(rows),32):sequences.append(rows[start:start+32])
+            chunk=[]
+            for row in rows:
+                chunk.append(row)
+                if len(chunk)==32 or row['done'] or row.get('trace_end',False):
+                    sequences.append(chunk);chunk=[]
+            if chunk:sequences.append(chunk)
         if not advantages:return
         mean=float(np.mean(advantages));std=max(float(np.std(advantages)),1e-6)
         # Batch independent recurrent chunks; preserve order within each hero.
@@ -100,12 +113,13 @@ class SharedPPO:
             if not torch.isfinite(loss):raise ValueError('Nonfinite PPO loss')
             loss.backward();nn.utils.clip_grad_norm_(self.policy.parameters(),.5);self.optimizer.step();losses.append(loss.item())
         after=torch.cat([p.detach().flatten() for p in self.policy.parameters()])
-        self.version+=1;self.stats=dict(loss=float(np.mean(losses)),parameter_change=float((after-before).norm()),samples=count,streams=len(self.buffers))
+        self.version+=1;self.stats=dict(loss=float(np.mean(losses)),parameter_change=float((after-before).norm()),samples=count,streams=len(self.buffers),gamma_per_second=self.gamma,trace_per_second=self.trace,acknowledgement_gaps=self.gaps)
         self.buffers.clear()
     def save(self,path,schema):
         path=Path(path);path.parent.mkdir(parents=True,exist_ok=True);temp=path.with_suffix('.tmp')
         torch.save(dict(schema=schema,policy=self.policy.state_dict(),optimizer=self.optimizer.state_dict(),
-            version=self.version,samples=self.samples,total_reward=self.total_reward,rng=torch.get_rng_state()),temp)
+            version=self.version,samples=self.samples,total_reward=self.total_reward,rng=torch.get_rng_state(),
+            training_config=dict(gamma=self.gamma,trace=self.trace,rollout=self.rollout)),temp)
         temp.replace(path)
     def load(self,path,schema):
         data=torch.load(path,map_location='cpu',weights_only=True)
