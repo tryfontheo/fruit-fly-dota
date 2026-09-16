@@ -55,10 +55,10 @@ def test_damage_feedback_scaling():
     from pathlib import Path
     from lupa import LuaRuntime
     rules=LuaRuntime().execute(Path('dota/live/scripts/vscripts/reward_rules.lua').read_text())
-    assert rules.damage_taken(100,1000,False)==pytest.approx(-.2)
-    assert rules.damage_taken(100,1000,True)==pytest.approx(-.4)
+    assert rules.damage_taken(100,1000,False)==pytest.approx(-.05)
+    assert rules.damage_taken(100,1000,True)==pytest.approx(-.1)
     assert rules.damage_taken(-100,1000,True)==0
-    assert rules.damage_taken(10000,1000,True)==-4
+    assert rules.damage_taken(10000,1000,True)==-1
 
 def test_round_terminal_reward_precedes_trace_reset():
     brain=FullReservoir(csr_matrix(([1.],([1],[0])),shape=(2,2)),[0],[1],input_size=OBS_SIZE,pools=1)

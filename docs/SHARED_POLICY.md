@@ -1,11 +1,31 @@
 # Shared recurrent self-play
 
+Free camera is the default; `fly_camera_follow 0` is an explicit opt-in.
+Training uses an adaptive 0.5–4x game-speed controller. It increases speed in
+0.5 steps and aims to keep p95 response delay below 1.2 game seconds; request
+failures trigger a reduction. `fly_speed_max 2` caps it at 2x, or use 1 for normal
+speed. It enables local tool cheats for the time-scale cvar, without granting
+items/gold/levels. This is a latency guard, not proof that high speed preserves
+combat quality. Physical command timeouts use `GetSystemTimeMS` wall time instead
+of server game time. See [server API](https://docs.moddota.com/lua_server/).
+
+Reward trial `lane-v4-exploration` reduces damage penalties to -0.5 per full HP
+equivalent, tower damage to -1 and death to -1 (previously -2, -4 and -3).
+Farming/XP rewards are unchanged. The rationale is to reduce early avoidance;
+this is an unproven reward hypothesis, not evidence of improved play. The model
+before the change is preserved as `work/before-exploration-v4.pt`. Historical
+outcome review: `results/recurrent/pre_exploration_review.json`; generate a new
+review with `scripts/report_learning.py`. Do not compare raw shaped returns
+across reward versions as if their meaning were unchanged.
+
 ## Faster contact curriculum
 
 **Start-Fast-Training.cmd**, or option **5** in the desktop menu, starts 5v5 with
-a one-time lane placement. After 45 game seconds each living hero is placed
+a lane-placement curriculum. After 45 game seconds each living hero is placed
 400 units behind its team's most advanced living lane creep (distance from base).
-Unavailable/dead heroes wait until placement is possible. No health, levels,
+Unavailable/dead heroes wait until placement is possible. A hero with no new XP
+for 120 game seconds receives another placement. This avoids long unproductive
+stretches but does not demonstrate learned navigation. No health, levels,
 items or gold are granted. Subsequent actions and ordinary base respawns remain
 under the existing learner/game rules. Placement marks a recurrent episode boundary.
 This is engineered initial-state training, not learned navigation. It clusters

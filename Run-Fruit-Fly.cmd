@@ -10,7 +10,7 @@ echo 1. Start 5 vs 5 training - continue saved learning
 echo 2. Start lane practice - continue saved learning
 echo 3. Open brain and action dashboard
 echo 4. Check training and last save
-echo 5. Start faster practice - 5v5 with a one-time lane start
+echo 5. Start faster practice - 5v5 with idle curriculum resets
 echo Q. Close this menu - training keeps running
 echo.
 echo Before starting a new game, close Dota if it is already open.

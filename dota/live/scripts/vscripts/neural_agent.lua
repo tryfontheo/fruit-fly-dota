@@ -142,7 +142,6 @@ local function think()
     end
     roundDeadline=Time()+roundSeconds
     lastPosition=nil;idleSince=Time()
-    if playerID==0 then PlayerResource:SetCameraTarget(0,h) end
     print("FLY_TRAIN_ROUND",seq)
   end
   if not h:IsAlive() then return .2 end
@@ -192,7 +191,7 @@ local function think()
   local requestSeq=seq; seq=seq+1
   local dt=lastDecisionTime and math.min(60,math.max(.001,Time()-lastDecisionTime)) or decisionInterval
   lastDecisionTime=Time()
-  local epoch=generation; local sent=Time(); pending=true
+  local epoch=generation; local sent=require("speed_control").now(); pending=true
   local req=CreateHTTPRequestScriptVM("POST","http://127.0.0.1:8765/step")
   local deliveredReward=rewardPending;rewardPending=0
   local componentParts={}
@@ -206,7 +205,9 @@ local function think()
   req:Send(function(response)
     if epoch~=generation then return end
     pending=false
-    if not running or Time()-sent>1.5 or not h:IsAlive() or response.StatusCode~=200 then h:Stop(); return end
+    local latency=require("speed_control").now()-sent
+    require("speed_control").sample(latency,response.StatusCode==200)
+    if not running or latency>1.5 or not h:IsAlive() or response.StatusCode~=200 then h:Stop(); return end
     local s,a=string.match(response.Body or "", "^(%d+)|(%d+)$")
     a=tonumber(a)
     if tonumber(s)~=requestSeq or not a or a>53 or legal[a+1]~=1 then return end

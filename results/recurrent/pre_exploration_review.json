@@ -1,0 +1,59 @@
+[
+  {
+    "session": "215291209",
+    "decisions": 2926,
+    "approximate_near_either_base_fraction": 0.42378673957621327,
+    "reward_totals": {
+      "missed_spell": -0.1,
+      "creep_damage": 0.3640909090909089,
+      "experience": 0.23300000000000004,
+      "damage_taken": -10.825278810408959,
+      "tower_damage_taken": -11.07063197026012,
+      "building_damage": 0.0144444444444444,
+      "death": -15,
+      "jungle_damage": 0.23345238095238136
+    },
+    "game_seconds_between_decisions_p95": 0.60000026226044,
+    "rejected_fraction": 0.00786056049213944,
+    "policy_updates": 204
+  },
+  {
+    "session": "964073701",
+    "decisions": 5334,
+    "approximate_near_either_base_fraction": 0.4746906636670416,
+    "reward_totals": {
+      "creep_damage": 0.15693939393939318,
+      "experience": 0.36100000000000004,
+      "tower_damage_taken": -15.747211895910745,
+      "missed_spell": -0.35,
+      "damage_taken": -11.17100371747212,
+      "building_damage": 0.0377777777777778,
+      "death": -12,
+      "jungle_damage": 0.17861158008658037,
+      "rune_activation": 0.6000000000000001
+    },
+    "game_seconds_between_decisions_p95": 0.59999084472656,
+    "rejected_fraction": 0.0054368203974503185,
+    "policy_updates": 223
+  },
+  {
+    "session": "929164979",
+    "decisions": 14655,
+    "approximate_near_either_base_fraction": 0.5834868645513477,
+    "reward_totals": {
+      "missed_spell": -1.1500000000000004,
+      "rune_activation": 1.9999999999999998,
+      "jungle_damage": 0.2274670098960789,
+      "damage_taken": -16.397536021439002,
+      "experience": 1.1090000000000002,
+      "creep_damage": 0.17472727272727273,
+      "last_hit": 1,
+      "death": -12,
+      "tower_damage_taken": -1.36819037128826,
+      "guide_item": 1.4
+    },
+    "game_seconds_between_decisions_p95": 0.60000610351563,
+    "rejected_fraction": 0.002524735585124531,
+    "policy_updates": 276
+  }
+]

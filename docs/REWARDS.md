@@ -1,4 +1,13 @@
-# Reward design: lane-v2
+# Current reward trial: lane-v4-exploration
+
+Damage taken now costs -0.5 per full HP equivalent, tower damage -1, and death
+-1. Positive farming, XP, rune, item and spell rules remain as described below.
+This reduces the earlier survival penalties as an experimental response to
+fountain avoidance; improvement has not been established. See
+[current training setup and evidence](SHARED_POLICY.md). Old values below record
+the previous versions and must not be mistaken for the active penalty scale.
+
+# Historical reward design: lane-v2
 
 These are experimental, engineered teaching signals. Positive reward strengthens recently selected actions through a connectome-dependent readout; negative reward weakens them. They are not measured dopamine, nor a validated biological punishment circuit. Reward design introduces human knowledge even when there are no tactical scripts.
 

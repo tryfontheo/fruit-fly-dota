@@ -24,7 +24,7 @@ local function attach(id)
     hero:SetIdleAcquire(false)
     local spawn=Entities:FindByClassname(nil,hero:GetTeamNumber()==DOTA_TEAM_GOODGUYS and "info_player_start_goodguys" or "info_player_start_badguys")
     if spawn then FindClearSpaceForUnit(hero,spawn:GetAbsOrigin(),true);hero:SetRespawnPosition(spawn:GetAbsOrigin()) end
-    if id==0 then hero:SetControllableByPlayer(0,true);PlayerResource:SetCameraTarget(0,hero) end
+    if id==0 then hero:SetControllableByPlayer(0,true);PlayerResource:SetCameraTarget(0,nil) end
     agents[id]=require("neural_agent").new(hero,id,session)
     if desiredMode=="practice" then agents[id].practice(roundSeconds) end
     GameRules:GetGameModeEntity():SetContextThink("FlyAgent"..id,agents[id].think,.1+id*.015)
@@ -46,6 +46,7 @@ function Activate()
   session=tostring(RandomInt(100000,999999999))
   assert(IsInToolsMode(),"Only local Workshop Tools games are supported")
   local mode=GameRules:GetGameModeEntity()
+  require("speed_control").start()
   GameRules:SetCustomGameTeamMaxPlayers(DOTA_TEAM_GOODGUYS,5);GameRules:SetCustomGameTeamMaxPlayers(DOTA_TEAM_BADGUYS,5)
   GameRules:SetSameHeroSelectionEnabled(true);mode:SetCustomGameForceHero("npc_dota_hero_nevermore")
   GameRules:SetHeroSelectionTime(0);GameRules:SetPreGameTime(0);GameRules:SetStartingGold(600);GameRules:SetCustomGameSetupTimeout(0)
@@ -99,12 +100,17 @@ function Activate()
   end,nil)
   local ok,auto=pcall(require,"auto_training")
   if ok and auto=="curriculum" then
-    local placed={}
+    local placed={};local progress={}
     mode:SetContextThink("FlyLaneStartCurriculum",function()
       if not active or GameRules:GetDOTATime(false,false)<45 then return 1 end
       local remaining=0
       local creeps=Entities:FindAllByClassname("npc_dota_creep_lane")
       for id,a in pairs(agents) do
+        local now=GameRules:GetDOTATime(false,false)
+        local xp=a.hero:GetCurrentXP()
+        if not progress[id] or xp>progress[id].xp then progress[id]={xp=xp,time=now} end
+        -- Training-only reset after two minutes without new XP, not a movement policy.
+        if placed[id] and now-progress[id].time>=120 then placed[id]=nil;progress[id].time=now end
         if not placed[id] then
           local h=a.hero
           local spawn=Entities:FindByClassname(nil,h:GetTeamNumber()==DOTA_TEAM_GOODGUYS and "info_player_start_goodguys" or "info_player_start_badguys")
@@ -116,7 +122,7 @@ function Activate()
         end
       end
       local count=0;for _ in pairs(placed) do count=count+1 end
-      if count>=10 and remaining==0 then return nil end
+      -- Keep checking for unproductive curriculum stretches; normal mode does not.
       return 1
     end,1)
   end

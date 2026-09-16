@@ -1,9 +1,9 @@
 -- Engineered training rewards, not biological dopamine concentrations.
-local M={version="lane-v3",last_hit=1,deny=.3,hero_kill=3,building_kill=5,death=-3,
+local M={version="lane-v4-exploration",last_hit=1,deny=.3,hero_kill=3,building_kill=5,death=-1,
   damage_budgets={creep=.1,hero=.5,building=1}}
 function M.damage_taken(damage,max_health,tower)
   local fraction=math.min(1,math.max(0,tonumber(damage) or 0)/math.max(1,max_health))
-  return -fraction*(tower and 4 or 2)
+  return -fraction*(tower and 1 or .5)
 end
 function M.damage_dealt(ledger,target,damage,max_health,kind)
   local budget=M.damage_budgets[kind]
