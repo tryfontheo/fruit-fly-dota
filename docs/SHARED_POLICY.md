@@ -30,6 +30,13 @@ not private fog observations. Recurrent PPO pools 256 transitions, uses 32-step
 chunks and three epochs. Version checks reject stale transitions; failed orders
 discard that stream's short rollout to avoid crediting unexecuted choices.
 
+Training batches independent recurrent chunks instead of evaluating every example
+serially. A CPU comparison including one 256-sample update took 0.449 seconds
+serially and 0.103 seconds batched (4.35x for this isolated workload). Maximum
+parameter difference was 7.1e-8, including a terminal transition. See
+`results/recurrent/batched_ppo.json`. This excludes full-graph simulation and Dota;
+it does not establish a 4.35x game-speed or sample-efficiency improvement.
+
 One match contains five SFs per team with normal deaths/respawns. Actual results
 request +100 for winners, -100 for losers and a reload after 15 seconds. A
 30-minute timeout is a draw with zero outcome bonus. Full-game completion/reload

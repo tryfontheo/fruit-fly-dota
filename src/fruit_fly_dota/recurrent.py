@@ -72,19 +72,30 @@ class SharedPPO:
             for start in range(0,len(rows),32):sequences.append(rows[start:start+32])
         if not advantages:return
         mean=float(np.mean(advantages));std=max(float(np.std(advantages)),1e-6)
+        # Batch independent recurrent chunks; preserve order within each hero.
+        batch=len(sequences);length=max(map(len,sequences));features=sequences[0][0]['x'].numel()
+        xs=torch.zeros(length,batch,features);masks=torch.zeros(length,batch,self.policy.actions,dtype=torch.bool)
+        masks[:,:,0]=True
+        actions=torch.zeros(length,batch,dtype=torch.long);oldlog=torch.zeros(length,batch)
+        advs=torch.zeros(length,batch);returns=torch.zeros(length,batch)
+        valid=torch.zeros(length,batch);ends=torch.zeros(length,batch,dtype=torch.bool)
+        initial=torch.stack([rows[0]['h'] for rows in sequences]).detach()
+        for b,rows in enumerate(sequences):
+            for t,row in enumerate(rows):
+                xs[t,b]=row['x'];masks[t,b]=row['mask'];actions[t,b]=row['action']
+                oldlog[t,b]=row['logp'];advs[t,b]=(row['adv']-mean)/std
+                returns[t,b]=row['return'];valid[t,b]=1;ends[t,b]=row['done']
+        count=len(advantages)
         losses=[];before=torch.cat([p.detach().flatten() for p in self.policy.parameters()]).clone()
         for _ in range(3):
-            self.optimizer.zero_grad();loss=0.;count=0
-            for rows in sequences:
-                h=rows[0]['h'].reshape(1,-1).detach()
-                for row in rows:
-                    dist,value,h=self.policy(row['x'][None],h,row['mask'][None])
-                    logp=dist.log_prob(torch.tensor([row['action']]))
-                    ratio=(logp-row['logp']).exp();adv=(row['adv']-mean)/std
-                    actor=-torch.minimum(ratio*adv,ratio.clamp(.8,1.2)*adv)
-                    loss=loss+actor.mean()+.5*(value-row['return']).square().mean()-.01*dist.entropy().mean()
-                    count+=1
-                    if row['done']:h=torch.zeros_like(h)
+            self.optimizer.zero_grad();loss=0.;h=initial
+            for t in range(length):
+                dist,value,h=self.policy(xs[t],h,masks[t])
+                ratio=(dist.log_prob(actions[t])-oldlog[t]).exp()
+                actor=-torch.minimum(ratio*advs[t],ratio.clamp(.8,1.2)*advs[t])
+                per_row=actor+.5*(value-returns[t]).square()-.01*dist.entropy()
+                loss=loss+(per_row*valid[t]).sum()
+                h=h*(~ends[t]).float()[:,None]
             loss=loss/count
             if not torch.isfinite(loss):raise ValueError('Nonfinite PPO loss')
             loss.backward();nn.utils.clip_grad_norm_(self.policy.parameters(),.5);self.optimizer.step();losses.append(loss.item())

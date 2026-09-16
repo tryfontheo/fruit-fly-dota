@@ -69,6 +69,13 @@ Jungle creeps receive the same capped +0.10 damage and +1 last-hit reward as lan
 creeps. Actual raze casts with no attributed damage within 0.8 seconds cost -0.05;
 Requiem uses four seconds and -0.20. This may discourage useful zoning/fear.
 
+Spell outcome tracking tolerates damage arriving up to 0.15 seconds before its
+cast notification; old hits and other razes cannot cancel a miss penalty. Only
+actual positive enemy damage marks a hit. Raze/ultimate damage now has its own
+dashboard label, using the same per-target damage budgets: no extra per-keypress
+or duplicate hit bonus. A last hit still adds +1, hero kill +3. A hit on an exhausted
+damage budget avoids a miss penalty but does not replenish damage reward.
+
 Actual winners receive +100, losers -100; timeout draws get zero outcome bonus.
 Shared transport clips to [-200,200]; PPO scales all reward by 0.1 internally.
 These are learning rewards, not extra game XP. A finite win bonus does not ensure

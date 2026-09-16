@@ -1,0 +1,11 @@
+{
+  "benchmark": "CPU GRU PPO collection and one 256-sample update; full graph and Dota excluded",
+  "serial_seconds": 0.44897150000008423,
+  "batched_seconds": 0.10321240000007492,
+  "speedup": 4.349976359427339,
+  "maximum_weight_difference": 7.078051567077637e-08,
+  "updates": [
+    1,
+    1
+  ]
+}

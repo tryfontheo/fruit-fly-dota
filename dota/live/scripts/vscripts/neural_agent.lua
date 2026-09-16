@@ -38,7 +38,7 @@ local function stop()
   print("FLY_STOP")
 end
 local interactions=require("interactions")
-local spells={}
+local spellFeedback=require("spell_feedback").new()
 local roundSeconds=300
 local terminalPending=nil
 local terminalSeq=nil
@@ -46,9 +46,7 @@ xpHighWater=hero:GetCurrentXP()
 ListenToGameEvent("dota_player_used_ability",function(e)
   if e.caster_entindex~=hero:entindex() then return end
   local name=e.abilityname or ""
-  if name=="nevermore_requiem" or string.find(name,"nevermore_shadowraze",1,true)==1 then
-    spells[name]={deadline=Time()+(name=="nevermore_requiem" and 4 or .8),hit=false}
-  end
+  spellFeedback.cast(name,Time())
 end,nil)
 local function sendTerminal()
   if pending then return end
@@ -93,14 +91,20 @@ end
       local tower=attacker:IsTower()
       reward(rewardRules.damage_taken(e.damage,controlledHero:GetMaxHealth(),tower),tower and "tower_damage_taken" or "damage_taken")
     end
-    if attacker==controlledHero and e.entindex_inflictor then
+    local spellName=nil
+    if attacker==controlledHero and victim and victim:GetTeamNumber()~=controlledHero:GetTeamNumber() and e.entindex_inflictor then
       local inflictor=EntIndexToHScript(e.entindex_inflictor)
-      if inflictor and spells[inflictor:GetAbilityName()] and (tonumber(e.damage) or 0)>0 then spells[inflictor:GetAbilityName()].hit=true end
+      if inflictor and (tonumber(e.damage) or 0)>0 then
+        spellName=inflictor:GetAbilityName();spellFeedback.damage(spellName,Time())
+      end
     end
     if attacker==controlledHero and victim and victim:GetTeamNumber()~=controlledHero:GetTeamNumber() then
       local kind=victim:IsBuilding() and "building" or (victim:IsRealHero() and "hero" or (victim:IsCreep() and "creep" or nil))
       if kind then
-        reward(rewardRules.damage_dealt(damageLedger,victim,e.damage,victim:GetMaxHealth(),kind),victim:GetTeamNumber()==DOTA_TEAM_NEUTRALS and "jungle_damage" or kind.."_damage")
+        local reason=victim:GetTeamNumber()==DOTA_TEAM_NEUTRALS and "jungle_damage" or kind.."_damage"
+        if spellName and string.find(spellName,"nevermore_shadowraze",1,true)==1 then reason="raze_damage"
+        elseif spellName=="nevermore_requiem" then reason="ultimate_damage" end
+        reward(rewardRules.damage_dealt(damageLedger,victim,e.damage,victim:GetMaxHealth(),kind),reason)
       end
     end
   end,nil)
@@ -108,11 +112,9 @@ local directions={{1,0},{.707,.707},{0,1},{-.707,.707},{-1,0},{-.707,-.707},{0,-
 local function think()
   if not running or not IsInToolsMode() or GameRules:IsGamePaused() then return .2 end
   if terminalPending then sendTerminal();return .2 end
-  for name,cast in pairs(spells) do
-    if Time()>=cast.deadline then
-      if not cast.hit then reward(name=="nevermore_requiem" and -.2 or -.05,"missed_spell") end
-      spells[name]=nil
-    end
+  for _,cast in ipairs(spellFeedback.settle(Time())) do
+    reward(cast.penalty,"missed_spell")
+    print("FLY_SPELL_RESULT",playerID,cast.name,cast.hit and "hit" or "miss")
   end
   local h=controlledHero
   if not h then return .2 end
