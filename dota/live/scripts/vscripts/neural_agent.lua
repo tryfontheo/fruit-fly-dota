@@ -240,6 +240,7 @@ local function think()
 end
 
 return {hero=hero,think=think,stop=stop,
+  boundary=function() roundEnded=true end,
   match=function() training=false;running=true end,
   resume=function() running=true end,
   practice=function(seconds) running=true;training=true;roundSeconds=seconds or 300;roundDeadline=0 end,

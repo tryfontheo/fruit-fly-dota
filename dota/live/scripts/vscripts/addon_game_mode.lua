@@ -98,10 +98,32 @@ function Activate()
     end
   end,nil)
   local ok,auto=pcall(require,"auto_training")
+  if ok and auto=="curriculum" then
+    local placed={}
+    mode:SetContextThink("FlyLaneStartCurriculum",function()
+      if not active or GameRules:GetDOTATime(false,false)<45 then return 1 end
+      local remaining=0
+      local creeps=Entities:FindAllByClassname("npc_dota_creep_lane")
+      for id,a in pairs(agents) do
+        if not placed[id] then
+          local h=a.hero
+          local spawn=Entities:FindByClassname(nil,h:GetTeamNumber()==DOTA_TEAM_GOODGUYS and "info_player_start_goodguys" or "info_player_start_badguys")
+          local target=spawn and require("lane_start").position(h,creeps,spawn:GetAbsOrigin())
+          if target and h:IsAlive() then
+            h:Stop();FindClearSpaceForUnit(h,target,true);a.boundary();placed[id]=true
+            print("FLY_LANE_START",id,target.x,target.y)
+          else remaining=remaining+1 end
+        end
+      end
+      local count=0;for _ in pairs(placed) do count=count+1 end
+      if count>=10 and remaining==0 then return nil end
+      return 1
+    end,1)
+  end
   if ok and auto then
     mode:SetContextThink("FlyAutoStart",function()
       if not PlayerResource:GetPlayer(0) then return 1 end
-      SendToServerConsole(auto=="selfplay" and "fly_selfplay" or "fly_train");return nil
+      SendToServerConsole((auto=="selfplay" or auto=="curriculum") and "fly_selfplay" or "fly_train");return nil
     end,1)
   end
   mode:SetContextThink("FlyMatchTimeout",function()

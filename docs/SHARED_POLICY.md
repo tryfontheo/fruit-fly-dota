@@ -1,5 +1,21 @@
 # Shared recurrent self-play
 
+## Faster contact curriculum
+
+**Start-Fast-Training.cmd**, or option **5** in the desktop menu, starts 5v5 with
+a one-time lane placement. After 45 game seconds each living hero is placed
+400 units behind its team's most advanced living lane creep (distance from base).
+Unavailable/dead heroes wait until placement is possible. No health, levels,
+items or gold are granted. Subsequent actions and ordinary base respawns remain
+under the existing learner/game rules. Placement marks a recurrent episode boundary.
+This is engineered initial-state training, not learned navigation. It clusters
+heroes near waves and may overrepresent fights; compare base-start evaluations.
+It is intended to increase meaningful contacts, not a proven sample-efficiency gain.
+`FLY_LANE_START` records placements in the Dota console log. Keep curriculum
+results separate from ordinary match evaluations. **Start-SelfPlay.cmd** retains
+normal base starts. The pre-curriculum local model is backed up as
+`work/before-lane-start-v6.pt`.
+
 **Run-Fruit-Fly.cmd** is the simple menu: start 5v5, start lane practice, open the
 dashboard, or check training/saves. Close Dota before starting a new game, keep
 Steam signed in, and leave the computer awake. Closing the menu does not stop
