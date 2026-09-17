@@ -11,7 +11,7 @@ for line in Path('work/shared-v6.jsonl').open():
     o=r['obs'];s['n']+=1;s['rewards'].update(r.get('reward_components',{}))
     v=r.get('reward_version','unknown');s['reward_versions'].add(v)
     components=r.get('reward_components',{})
-    multiplier=2 if v=='lane-v5-farming' else 1
+    multiplier=2 if v in ('lane-v5-farming','lane-v6-fountain-cost') else 1
     s['farm']+=(components.get('last_hit',0)+components.get('jungle_last_hit',0))/multiplier
     s['xp']+=components.get('experience',0)/(.002 if multiplier==2 else .001)
     s['deaths']+=int(components.get('death',0)<0)

@@ -21,6 +21,7 @@ local roundDeadline=0
 local roundEnded=false
 local practiceCreeps={}
 local xpHighWater=nil
+local fountainIdle={}
 local lastRuneTimes={}
 local function reward(value,reason)
   if not running then return end
@@ -118,6 +119,12 @@ local function think()
   end
   local h=controlledHero
   if not h then return .2 end
+  local base=Entities:FindByClassname(nil,h:GetTeamNumber()==DOTA_TEAM_GOODGUYS and "info_player_start_goodguys" or "info_player_start_badguys")
+  local healthyIdle=GameRules:GetDOTATime(false,false)>=45 and h:IsAlive()
+    and h:GetHealth()/math.max(1,h:GetMaxHealth())>=.9
+    and h:GetMana()/math.max(1,h:GetMaxMana())>=.9
+    and base and (base:GetAbsOrigin()-h:GetAbsOrigin()):Length2D()<1600
+  reward(rewardRules.fountain_idle(fountainIdle,Time(),healthyIdle),"healthy_fountain_idle")
   for slot=0,8 do
     local item=h:GetItemInSlot(slot)
     if item then reward(guideItems.claim(guideSeen,item:GetAbilityName()),"guide_item") end

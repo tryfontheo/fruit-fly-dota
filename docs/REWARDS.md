@@ -1,4 +1,13 @@
-# Current reward trial: lane-v5-farming
+# Current reward trial: lane-v6-fountain-cost
+
+Healthy fountain camping costs -0.02 per game-second after 15 continuous seconds
+within 1,600 units of the own-team spawn, with HP and mana both at least 90%.
+It starts only after game time 45 seconds and never charges dead heroes. Leaving
+the zone or dropping below either threshold resets the grace period. This is an
+engineered opportunity-cost experiment; it can teach boundary camping or repeated
+visits instead of farming, so lower base occupancy alone is not success. There is
+no movement reward or scripted exit action. Brief recovery/shopping is allowed;
+this cannot recognize every legitimate reason to stay at base.
 
 Damage taken now costs -0.5 per full HP equivalent, tower damage -1, and death
 -1. Last hits (lane or jungle) now earn +2 and each new XP earns +0.002.
